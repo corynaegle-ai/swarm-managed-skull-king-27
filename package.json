@@ -1,0 +1,21 @@
+{
+  "name": "skull-king-scoring",
+  "version": "0.1.0",
+  "description": "Skull King card game scoring engine",
+  "main": "src/js/scoring.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "skull-king",
+    "card-game",
+    "scoring"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^27.0.0"
+  }
+}
