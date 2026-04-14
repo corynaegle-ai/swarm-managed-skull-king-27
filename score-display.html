@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Score Display - Skull King</title>
+  <link rel="stylesheet" href="css/score-display.css">
+</head>
+<body>
+  <div id="score-display-container" class="score-display-wrapper">
+    <div class="score-display">
+      <!-- Current Leader Section -->
+      <section class="leader-section">
+        <div class="current-leader" id="current-leader">
+          <div class="leader-info">
+            <span class="leader-label">Current Leader:</span>
+            <span class="leader-name">-</span>
+            <span class="leader-score">0 points</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Current Round Scores Section -->
+      <section class="scores-section">
+        <div class="round-info" id="round-info">
+          <div class="round-info-content">
+            <span class="round-label">Round:</span>
+            <span class="round-number">0 / 10</span>
+          </div>
+        </div>
+        <div class="player-scores" id="player-scores">
+          <div class="scores-list"></div>
+        </div>
+      </section>
+
+      <!-- Final Rankings Section -->
+      <section class="final-standings-section">
+        <div class="final-standings" id="final-standings">
+          <!-- Final rankings will be rendered here when game ends -->
+          <div class="final-rankings-container" style="display: none;">
+            <h2>Final Rankings</h2>
+            <div class="podium">
+              <!-- Rankings template:
+              <div class="ranking-item" data-place="1">
+                <div class="place-badge">1st</div>
+                <div class="player-name">Player Name</div>
+                <div class="final-score">100 points</div>
+              </div>
+              -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="js/scoreDisplay.js"></script>
+</body>
+</html>
