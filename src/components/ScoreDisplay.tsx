@@ -62,13 +62,13 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ game, gameEnded }) => {
               <div
                 key={player.id}
                 className={`leaderboard-entry ${
-                  player.id === currentLeader && !gameEnded ? 'leader' : ''
+                  player.id === currentLeader ? 'leader' : ''
                 }`}
               >
                 <div className="rank-position">{index + 1}</div>
                 <div className="player-info">
                   <div className="player-name">{player.name}</div>
-                  {player.id === currentLeader && !gameEnded && (
+                  {player.id === currentLeader && (
                     <div className="leader-badge">Leading</div>
                   )}
                 </div>
@@ -141,7 +141,7 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ game, gameEnded }) => {
                           <span className="round-bid">Bid {round.bid}</span>
                           <span className="round-tricks">Tricks {round.tricks}</span>
                           <span className={`round-score ${
-                            round.score > 0 ? 'positive' : 'negative'
+                            round.score > 0 ? 'positive' : round.score < 0 ? 'negative' : 'neutral'
                           }`}>
                             {round.score > 0 ? '+' : ''}{round.score}
                           </span>

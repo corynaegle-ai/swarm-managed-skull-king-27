@@ -245,6 +245,10 @@
   color: #dc3545;
 }
 
+.round-score.neutral {
+  color: #666;
+}
+
 /* Final Rankings Section */
 .final-rankings-section {
   background: white;
@@ -436,7 +440,7 @@
   .round-history-row {
     font-size: 11px;
     padding: 8px 4px;
-    grid-template-columns: minmax(70px, 1fr) repeat(3, 1fr) 45px;
+    grid-template-columns: minmax(70px, 1fr) repeat(auto-fit, minmax(40px, 1fr)) 45px;
     gap: 3px;
   }
 

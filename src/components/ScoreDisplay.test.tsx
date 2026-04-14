@@ -54,7 +54,9 @@ describe('ScoreDisplay Component', () => {
     // Alice: 20 + (-10) + 10 = 20
     // Bob: 10 + 20 + (-20) = 10
     // Charlie: 30 + (-10) + 20 = 40
-    expect(screen.getByText('Current Standings')).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('40')).toBeInTheDocument();
   });
 
   it('displays score history by round', () => {
@@ -87,6 +89,13 @@ describe('ScoreDisplay Component', () => {
   it('indicates the current leader during active game', () => {
     render(<ScoreDisplay game={mockGame} gameEnded={false} />);
     // Charlie has the highest score (40), should be marked as leading
+    const leadingBadges = screen.getAllByText('Leading');
+    expect(leadingBadges.length).toBeGreaterThan(0);
+  });
+
+  it('indicates the current leader even when game has ended', () => {
+    render(<ScoreDisplay game={mockGameEnded} gameEnded={true} />);
+    // Leader indication should persist after game ends
     expect(screen.getByText('Leading')).toBeInTheDocument();
   });
 
@@ -119,7 +128,9 @@ describe('ScoreDisplay Component', () => {
     // Alice total: 20
     // Bob total: 10
     // Charlie total: 40
-    expect(screen.getByText('Round History')).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('40')).toBeInTheDocument();
   });
 
   it('displays correct rankings based on scores', () => {
