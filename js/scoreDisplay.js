@@ -137,6 +137,35 @@ class ScoreDisplay {
   }
 
   /**
+   * Get all players sorted by total score (descending)
+   * @returns {Array} Array of {playerName, score} objects
+   */
+  getPlayersSortedByScore() {
+    return this.players
+      .map(playerName => ({
+        playerName,
+        score: this.getPlayerTotal(playerName)
+      }))
+      .sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Get round history with running totals for a player
+   * @param {string} playerName - Name of the player
+   * @returns {Array} Array of {roundNumber, roundScore, runningTotal} objects
+   */
+  getPlayerRoundBreakdown(playerName) {
+    const roundScores = this.getPlayerRoundHistory(playerName);
+    const runningTotals = this.getPlayerRunningTotals(playerName);
+    
+    return roundScores.map((score, index) => ({
+      roundNumber: index + 1,
+      roundScore: score,
+      runningTotal: runningTotals[index]
+    }));
+  }
+
+  /**
    * Reset all scores (new game)
    */
   reset() {
