@@ -34,7 +34,7 @@ export function addPlayer(name) {
   };
 
   players.push(newPlayer);
-  return { ...newPlayer }; // Return a copy to prevent external mutation
+  return { ...newPlayer, scores: [...newPlayer.scores] }; // Return a deep copy to prevent external mutation
 }
 
 /**
@@ -86,18 +86,13 @@ export function updatePlayerScore(playerId, roundScore) {
     throw new Error('Current round must be 1 or greater');
   }
 
-  // Fill any missing rounds with 0 if needed
-  while (player.scores.length <= roundIndex) {
-    player.scores.push(0);
-  }
-
-  // Update the score for the current round
+  // Update the score for the current round (direct assignment allows sparse arrays)
   player.scores[roundIndex] = roundScore;
 
   // Recalculate totalScore
   player.totalScore = player.scores.reduce((sum, score) => sum + score, 0);
 
-  return { ...player }; // Return a copy
+  return { ...player, scores: [...player.scores] }; // Return a deep copy
 }
 
 /**
@@ -113,7 +108,7 @@ export function getPlayer(id) {
   }
 
   const player = players.find(p => p.id === id);
-  return player ? { ...player } : null; // Return a copy or null
+  return player ? { ...player, scores: [...player.scores] } : null; // Return a deep copy or null
 }
 
 /**
@@ -122,7 +117,7 @@ export function getPlayer(id) {
  */
 export function getAllPlayers() {
   // Return a deep copy to prevent external mutation
-  return players.map(p => ({ ...p }));
+  return players.map(p => ({ ...p, scores: [...p.scores] }));
 }
 
 /**
@@ -130,8 +125,8 @@ export function getAllPlayers() {
  * @returns {array} Players sorted by total score (highest first)
  */
 export function calculateFinalScores() {
-  // Create a copy of all players with their current total scores
-  const sortedPlayers = players.map(p => ({ ...p }));
+  // Create a deep copy of all players with their current total scores
+  const sortedPlayers = players.map(p => ({ ...p, scores: [...p.scores] }));
 
   // Sort by totalScore in descending order (highest first)
   sortedPlayers.sort((a, b) => b.totalScore - a.totalScore);
@@ -140,18 +135,10 @@ export function calculateFinalScores() {
 }
 
 /**
- * Clear all players (useful for testing or resetting the game)
+ * Clear all players and reset ID counter (useful for testing or resetting the game)
  * @internal
  */
 export function clearAllPlayers() {
   players = [];
-  playerIdCounter = 1;
-}
-
-/**
- * Reset player ID counter (useful for testing)
- * @internal
- */
-export function resetPlayerIdCounter() {
   playerIdCounter = 1;
 }
