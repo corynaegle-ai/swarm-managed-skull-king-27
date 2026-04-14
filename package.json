@@ -1,0 +1,22 @@
+{
+  "name": "skull-king-game",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Skull King card game implementation",
+  "main": "js/app.js",
+  "scripts": {
+    "test": "jest",
+    "dev": "node js/app.js"
+  },
+  "keywords": [
+    "card",
+    "game",
+    "skull",
+    "king"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

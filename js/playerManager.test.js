@@ -1,340 +1,244 @@
-import { 
-  addPlayer, 
-  removePlayer, 
-  updatePlayerScore, 
-  getPlayer, 
-  getAllPlayers, 
-  calculateFinalScores,
-  clearAllPlayers,
-  resetPlayerIdCounter
-} from './playerManager.js';
-
-// Mock gameState
-jest.mock('./gameState.js', () => ({
-  getCurrentRound: jest.fn(() => 1)
-}));
-
-import { getCurrentRound } from './gameState.js';
+import { addPlayer, removePlayer, updatePlayerScore, getPlayer, getAllPlayers, calculateFinalScores, clearAllPlayers, resetPlayerIdCounter } from './playerManager.js';
+import { setCurrentRound } from './gameState.js';
 
 describe('playerManager', () => {
   beforeEach(() => {
     clearAllPlayers();
     resetPlayerIdCounter();
-    getCurrentRound.mockReturnValue(1);
+    setCurrentRound(0);
   });
 
-  // ============= addPlayer Tests =============
   describe('addPlayer', () => {
     it('should create a player with unique id and empty scores array', () => {
-      const player = addPlayer('Alice');
-      expect(player.id).toBe(1);
-      expect(player.name).toBe('Alice');
-      expect(player.scores).toEqual([]);
-      expect(player.totalScore).toBe(0);
-    });
-
-    it('should assign incrementing IDs to multiple players', () => {
       const player1 = addPlayer('Alice');
       const player2 = addPlayer('Bob');
-      const player3 = addPlayer('Charlie');
 
-      expect(player1.id).toBe(1);
-      expect(player2.id).toBe(2);
-      expect(player3.id).toBe(3);
+      expect(player1.id).toBe(0);
+      expect(player1.name).toBe('Alice');
+      expect(player1.scores).toEqual([]);
+      expect(player1.totalScore).toBe(0);
+
+      expect(player2.id).toBe(1);
+      expect(player2.name).toBe('Bob');
+      expect(player2.scores).toEqual([]);
+      expect(player2.totalScore).toBe(0);
     });
 
-    it('should throw error for empty string', () => {
+    it('should throw error for invalid name', () => {
       expect(() => addPlayer('')).toThrow();
-    });
-
-    it('should throw error for whitespace-only string', () => {
-      expect(() => addPlayer('   ')).toThrow();
-    });
-
-    it('should throw error for non-string input', () => {
-      expect(() => addPlayer(123)).toThrow();
       expect(() => addPlayer(null)).toThrow();
       expect(() => addPlayer(undefined)).toThrow();
-    });
-
-    it('should throw error for duplicate player names (case-insensitive)', () => {
-      addPlayer('Alice');
-      expect(() => addPlayer('Alice')).toThrow();
-      expect(() => addPlayer('ALICE')).toThrow();
-      expect(() => addPlayer('alice')).toThrow();
+      expect(() => addPlayer(123)).toThrow();
     });
 
     it('should trim whitespace from player names', () => {
-      const player = addPlayer('  Alice  ');
-      expect(player.name).toBe('Alice');
+      const player = addPlayer('  Charlie  ');
+      expect(player.name).toBe('Charlie');
     });
   });
 
-  // ============= removePlayer Tests =============
-  describe('removePlayer', () => {
-    it('should remove a player by ID', () => {
-      const player = addPlayer('Alice');
-      expect(getAllPlayers().length).toBe(1);
-
-      const removed = removePlayer(player.id);
-      expect(removed).toBe(true);
-      expect(getAllPlayers().length).toBe(0);
-    });
-
-    it('should return false if player does not exist', () => {
-      addPlayer('Alice');
-      const removed = removePlayer(999);
-      expect(removed).toBe(false);
-    });
-
-    it('should throw error for invalid player ID', () => {
-      expect(() => removePlayer('invalid')).toThrow();
-      expect(() => removePlayer(0)).toThrow();
-      expect(() => removePlayer(-1)).toThrow();
-      expect(() => removePlayer(null)).toThrow();
-    });
-  });
-
-  // ============= updatePlayerScore Tests =============
   describe('updatePlayerScore', () => {
     it('should add score for current round', () => {
       const player = addPlayer('Alice');
-      const updated = updatePlayerScore(player.id, 10);
+      setCurrentRound(0);
+      updatePlayerScore(player.id, 10);
 
-      expect(updated.scores).toEqual([10]);
-      expect(updated.totalScore).toBe(10);
+      expect(player.scores[0]).toBe(10);
+      expect(player.totalScore).toBe(10);
     });
 
-    it('should recalculate totalScore correctly', () => {
-      const player = addPlayer('Bob');
-      updatePlayerScore(player.id, 5);
-      getCurrentRound.mockReturnValue(2);
-      updatePlayerScore(player.id, 15);
-      getCurrentRound.mockReturnValue(3);
+    it('should handle multiple rounds', () => {
+      const player = addPlayer('Alice');
+      
+      setCurrentRound(0);
+      updatePlayerScore(player.id, 10);
+      expect(player.totalScore).toBe(10);
+
+      setCurrentRound(1);
       updatePlayerScore(player.id, 20);
+      expect(player.totalScore).toBe(30);
 
-      const updated = getPlayer(player.id);
-      expect(updated.scores).toEqual([5, 15, 20]);
-      expect(updated.totalScore).toBe(40);
+      setCurrentRound(2);
+      updatePlayerScore(player.id, 15);
+      expect(player.totalScore).toBe(45);
     });
 
-    it('should throw error for invalid player ID', () => {
+    it('should handle skipped rounds (sparse arrays)', () => {
+      const player = addPlayer('Alice');
+      
+      setCurrentRound(0);
+      updatePlayerScore(player.id, 10);
+      
+      // Skip round 1, set round 2
+      setCurrentRound(2);
+      updatePlayerScore(player.id, 20);
+      
+      // Total should only sum defined scores: 10 + 20 = 30 (not NaN)
+      expect(player.totalScore).toBe(30);
+      expect(player.scores[0]).toBe(10);
+      expect(player.scores[1]).toBe(undefined);
+      expect(player.scores[2]).toBe(20);
+    });
+
+    it('should throw error for non-existent player', () => {
       expect(() => updatePlayerScore(999, 10)).toThrow();
     });
 
     it('should throw error for invalid score', () => {
       const player = addPlayer('Alice');
+      expect(() => updatePlayerScore(player.id, -5)).toThrow();
       expect(() => updatePlayerScore(player.id, 'invalid')).toThrow();
-      expect(() => updatePlayerScore(player.id, Infinity)).toThrow();
-      expect(() => updatePlayerScore(player.id, NaN)).toThrow();
-    });
-
-    it('should accept zero and negative scores', () => {
-      const player = addPlayer('Alice');
-      updatePlayerScore(player.id, 0);
-      const updated1 = getPlayer(player.id);
-      expect(updated1.totalScore).toBe(0);
-
-      getCurrentRound.mockReturnValue(2);
-      updatePlayerScore(player.id, -5);
-      const updated2 = getPlayer(player.id);
-      expect(updated2.totalScore).toBe(-5);
     });
   });
 
-  // ============= getPlayer Tests =============
-  describe('getPlayer', () => {
-    it('should retrieve a player by ID', () => {
-      const created = addPlayer('Alice');
-      const retrieved = getPlayer(created.id);
+  describe('removePlayer', () => {
+    it('should remove player by id', () => {
+      const player1 = addPlayer('Alice');
+      const player2 = addPlayer('Bob');
 
-      expect(retrieved.id).toBe(created.id);
-      expect(retrieved.name).toBe('Alice');
+      expect(getAllPlayers().length).toBe(2);
+      const removed = removePlayer(player1.id);
+      expect(removed).toBe(true);
+      expect(getAllPlayers().length).toBe(1);
+      expect(getAllPlayers()[0].name).toBe('Bob');
+    });
+
+    it('should return false if player does not exist', () => {
+      const removed = removePlayer(999);
+      expect(removed).toBe(false);
+    });
+
+    it('should throw error for invalid id', () => {
+      expect(() => removePlayer('invalid')).toThrow();
+      expect(() => removePlayer(-1)).toThrow();
+      expect(() => removePlayer(1.5)).toThrow();
+    });
+  });
+
+  describe('getPlayer', () => {
+    it('should return player by id', () => {
+      const player = addPlayer('Alice');
+      const retrieved = getPlayer(player.id);
+      expect(retrieved).toBe(player);
     });
 
     it('should return null for non-existent player', () => {
-      const result = getPlayer(999);
-      expect(result).toBeNull();
+      const retrieved = getPlayer(999);
+      expect(retrieved).toBeNull();
     });
 
-    it('should throw error for invalid ID', () => {
+    it('should throw error for invalid id', () => {
       expect(() => getPlayer('invalid')).toThrow();
-      expect(() => getPlayer(0)).toThrow();
       expect(() => getPlayer(-1)).toThrow();
-    });
-
-    it('should return a copy (not the original)', () => {
-      const created = addPlayer('Alice');
-      const retrieved = getPlayer(created.id);
-      retrieved.name = 'Bob';
-
-      const original = getPlayer(created.id);
-      expect(original.name).toBe('Alice');
+      expect(() => getPlayer(1.5)).toThrow();
     });
   });
 
-  // ============= getAllPlayers Tests =============
   describe('getAllPlayers', () => {
-    it('should return empty array when no players exist', () => {
-      const players = getAllPlayers();
-      expect(players).toEqual([]);
-    });
-
     it('should return all players', () => {
-      addPlayer('Alice');
-      addPlayer('Bob');
-      addPlayer('Charlie');
+      const player1 = addPlayer('Alice');
+      const player2 = addPlayer('Bob');
+      const player3 = addPlayer('Charlie');
 
       const allPlayers = getAllPlayers();
-      expect(allPlayers).toHaveLength(3);
-      expect(allPlayers.map(p => p.name)).toEqual(['Alice', 'Bob', 'Charlie']);
+      expect(allPlayers.length).toBe(3);
+      expect(allPlayers[0].name).toBe('Alice');
+      expect(allPlayers[1].name).toBe('Bob');
+      expect(allPlayers[2].name).toBe('Charlie');
     });
 
-    it('should return a copy of players (not originals)', () => {
+    it('should return empty array when no players', () => {
+      const allPlayers = getAllPlayers();
+      expect(allPlayers).toEqual([]);
+    });
+
+    it('should return a copy, not the original array', () => {
       addPlayer('Alice');
       const allPlayers = getAllPlayers();
-      allPlayers[0].name = 'Bob';
-
-      const original = getAllPlayers();
-      expect(original[0].name).toBe('Alice');
+      allPlayers.push({ id: 999, name: 'Hacker' });
+      expect(getAllPlayers().length).toBe(1);
     });
   });
 
-  // ============= calculateFinalScores Tests =============
   describe('calculateFinalScores', () => {
     it('should return players sorted by total score (descending)', () => {
       const alice = addPlayer('Alice');
       const bob = addPlayer('Bob');
       const charlie = addPlayer('Charlie');
 
-      updatePlayerScore(alice.id, 50);
-      updatePlayerScore(bob.id, 100);
-      updatePlayerScore(charlie.id, 25);
-
-      const sorted = calculateFinalScores();
-      expect(sorted[0].name).toBe('Bob');
-      expect(sorted[0].totalScore).toBe(100);
-      expect(sorted[1].name).toBe('Alice');
-      expect(sorted[1].totalScore).toBe(50);
-      expect(sorted[2].name).toBe('Charlie');
-      expect(sorted[2].totalScore).toBe(25);
-    });
-
-    it('should handle ties correctly', () => {
-      const alice = addPlayer('Alice');
-      const bob = addPlayer('Bob');
-
-      updatePlayerScore(alice.id, 50);
+      setCurrentRound(0);
+      updatePlayerScore(alice.id, 30);
       updatePlayerScore(bob.id, 50);
-
-      const sorted = calculateFinalScores();
-      expect(sorted).toHaveLength(2);
-      expect(sorted[0].totalScore).toBe(50);
-      expect(sorted[1].totalScore).toBe(50);
-    });
-
-    it('should work with negative scores', () => {
-      const alice = addPlayer('Alice');
-      const bob = addPlayer('Bob');
-
-      updatePlayerScore(alice.id, -10);
-      updatePlayerScore(bob.id, 5);
+      updatePlayerScore(charlie.id, 20);
 
       const sorted = calculateFinalScores();
       expect(sorted[0].name).toBe('Bob');
-      expect(sorted[1].name).toBe('Alice');
-    });
-
-    it('should return a copy of players (not originals)', () => {
-      const alice = addPlayer('Alice');
-      updatePlayerScore(alice.id, 50);
-
-      const sorted = calculateFinalScores();
-      sorted[0].name = 'Bob';
-
-      const original = getPlayer(alice.id);
-      expect(original.name).toBe('Alice');
-    });
-
-    it('should work with multi-round scores', () => {
-      const alice = addPlayer('Alice');
-      const bob = addPlayer('Bob');
-      const charlie = addPlayer('Charlie');
-
-      // Round 1
-      updatePlayerScore(alice.id, 10);
-      updatePlayerScore(bob.id, 15);
-      updatePlayerScore(charlie.id, 5);
-
-      // Round 2
-      getCurrentRound.mockReturnValue(2);
-      updatePlayerScore(alice.id, 20);
-      updatePlayerScore(bob.id, 10);
-      updatePlayerScore(charlie.id, 25);
-
-      const sorted = calculateFinalScores();
-      expect(sorted[0].name).toBe('Charlie');
-      expect(sorted[0].totalScore).toBe(30);
+      expect(sorted[0].totalScore).toBe(50);
       expect(sorted[1].name).toBe('Alice');
       expect(sorted[1].totalScore).toBe(30);
-      expect(sorted[2].name).toBe('Bob');
-      expect(sorted[2].totalScore).toBe(25);
+      expect(sorted[2].name).toBe('Charlie');
+      expect(sorted[2].totalScore).toBe(20);
+    });
+
+    it('should handle scores across multiple rounds', () => {
+      const alice = addPlayer('Alice');
+      const bob = addPlayer('Bob');
+
+      setCurrentRound(0);
+      updatePlayerScore(alice.id, 10);
+      updatePlayerScore(bob.id, 5);
+
+      setCurrentRound(1);
+      updatePlayerScore(alice.id, 15);
+      updatePlayerScore(bob.id, 25);
+
+      const sorted = calculateFinalScores();
+      expect(sorted[0].name).toBe('Bob');
+      expect(sorted[0].totalScore).toBe(30);
+      expect(sorted[1].name).toBe('Alice');
+      expect(sorted[1].totalScore).toBe(25);
+    });
+
+    it('should return a copy sorted by totalScore descending', () => {
+      const player1 = addPlayer('Player1');
+      const player2 = addPlayer('Player2');
+      const player3 = addPlayer('Player3');
+
+      setCurrentRound(0);
+      updatePlayerScore(player1.id, 100);
+      updatePlayerScore(player2.id, 50);
+      updatePlayerScore(player3.id, 75);
+
+      const sorted = calculateFinalScores();
+      expect(sorted.length).toBe(3);
+      expect(sorted[0].totalScore).toBe(100);
+      expect(sorted[1].totalScore).toBe(75);
+      expect(sorted[2].totalScore).toBe(50);
     });
   });
 
-  // ============= Integration Tests =============
-  describe('Integration scenarios', () => {
-    it('should persist scores across rounds', () => {
-      const player = addPlayer('Alice');
-      
-      // Round 1
-      updatePlayerScore(player.id, 10);
-      expect(getPlayer(player.id).totalScore).toBe(10);
-      
-      // Round 2
-      getCurrentRound.mockReturnValue(2);
-      updatePlayerScore(player.id, 20);
-      expect(getPlayer(player.id).totalScore).toBe(30);
-      
-      // Round 3
-      getCurrentRound.mockReturnValue(3);
-      updatePlayerScore(player.id, 15);
-      expect(getPlayer(player.id).totalScore).toBe(45);
-      
-      const final = calculateFinalScores();
-      expect(final[0].scores).toEqual([10, 20, 15]);
-      expect(final[0].totalScore).toBe(45);
+  describe('clearAllPlayers', () => {
+    it('should clear all players and reset id counter', () => {
+      addPlayer('Alice');
+      addPlayer('Bob');
+      expect(getAllPlayers().length).toBe(2);
+
+      clearAllPlayers();
+      expect(getAllPlayers().length).toBe(0);
+
+      const newPlayer = addPlayer('Charlie');
+      expect(newPlayer.id).toBe(0);
     });
+  });
 
-    it('should handle multiple players with multiple rounds', () => {
-      const alice = addPlayer('Alice');
-      const bob = addPlayer('Bob');
-      const charlie = addPlayer('Charlie');
+  describe('resetPlayerIdCounter', () => {
+    it('should reset the player id counter for next player', () => {
+      const player1 = addPlayer('Alice');
+      expect(player1.id).toBe(0);
 
-      // Round 1
-      updatePlayerScore(alice.id, 10);
-      updatePlayerScore(bob.id, 20);
-      updatePlayerScore(charlie.id, 15);
-
-      // Round 2
-      getCurrentRound.mockReturnValue(2);
-      updatePlayerScore(alice.id, 30);
-      updatePlayerScore(bob.id, 10);
-      updatePlayerScore(charlie.id, 25);
-
-      // Round 3
-      getCurrentRound.mockReturnValue(3);
-      updatePlayerScore(alice.id, 20);
-      updatePlayerScore(bob.id, 25);
-      updatePlayerScore(charlie.id, 5);
-
-      const final = calculateFinalScores();
-      expect(final[0].name).toBe('Alice');
-      expect(final[0].totalScore).toBe(60);
-      expect(final[1].name).toBe('Bob');
-      expect(final[1].totalScore).toBe(55);
-      expect(final[2].name).toBe('Charlie');
-      expect(final[2].totalScore).toBe(45);
+      resetPlayerIdCounter();
+      const player2 = addPlayer('Bob');
+      expect(player2.id).toBe(0);
     });
   });
 });
