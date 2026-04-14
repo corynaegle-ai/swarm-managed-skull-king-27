@@ -15,19 +15,16 @@ class ScoreDisplay {
 
   /**
    * Initialize the score display DOM elements
+   * Only caches references to existing DOM elements from score-display.html
+   * Does NOT create or modify the DOM structure
    */
   initializeDisplay() {
-    const container = document.getElementById('score-display-container');
-    if (container) {
-      container.innerHTML = `
-        <div class="score-display">
-          <div class="current-leader" id="current-leader"></div>
-          <div class="player-scores" id="player-scores"></div>
-          <div class="round-info" id="round-info"></div>
-          <div class="final-standings" id="final-standings"></div>
-        </div>
-      `;
-    }
+    // Cache references to existing DOM elements
+    // These elements are defined in score-display.html
+    this.leaderDiv = document.getElementById('current-leader');
+    this.scoresDiv = document.getElementById('player-scores');
+    this.roundDiv = document.getElementById('round-info');
+    this.finalStandingsDiv = document.getElementById('final-standings');
   }
 
   /**
@@ -99,17 +96,36 @@ class ScoreDisplay {
     if (!finalStandingsDiv) return;
 
     const rankings = this.getFinalRankings();
-    finalStandingsDiv.innerHTML = '';
     
-    const container = document.createElement('div');
-    container.className = 'final-rankings-container';
+    // Find or create the final-rankings-container
+    let container = finalStandingsDiv.querySelector('.final-rankings-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'final-rankings-container';
+      finalStandingsDiv.appendChild(container);
+    }
     
-    const heading = document.createElement('h2');
+    // Show the container
+    container.style.display = 'block';
+    
+    // Find or create the heading
+    let heading = container.querySelector('h2');
+    if (!heading) {
+      heading = document.createElement('h2');
+      container.appendChild(heading);
+    }
     heading.textContent = 'Final Rankings';
-    container.appendChild(heading);
     
-    const podium = document.createElement('div');
-    podium.className = 'podium';
+    // Find or create the podium
+    let podium = container.querySelector('.podium');
+    if (!podium) {
+      podium = document.createElement('div');
+      podium.className = 'podium';
+      container.appendChild(podium);
+    }
+    
+    // Clear existing ranking items
+    podium.innerHTML = '';
     
     rankings.forEach((player, index) => {
       const place = index + 1;
@@ -139,9 +155,6 @@ class ScoreDisplay {
       
       podium.appendChild(item);
     });
-    
-    container.appendChild(podium);
-    finalStandingsDiv.appendChild(container);
   }
 
   /**
@@ -181,32 +194,19 @@ class ScoreDisplay {
    */
   updateCurrentLeader() {
     const leaderDiv = document.getElementById('current-leader');
-    if (!leaderDiv || this.gameEnded) return;
+    if (!leaderDiv || this.gameEnded || this.players.length === 0) return;
 
+    // Find leader by finding max total score
     const leader = this.players.reduce((prev, current) => 
-      (prev.totalScore > current.totalScore) ? prev : current, this.players[0]);
+      (prev.totalScore > current.totalScore) ? prev : current);
 
     if (leader) {
-      leaderDiv.innerHTML = '';
-      const info = document.createElement('div');
-      info.className = 'leader-info';
+      // Update existing child elements instead of replacing parent
+      const nameEl = leaderDiv.querySelector('.leader-name');
+      const scoreEl = leaderDiv.querySelector('.leader-score');
       
-      const label = document.createElement('span');
-      label.className = 'leader-label';
-      label.textContent = 'Current Leader:';
-      info.appendChild(label);
-      
-      const name = document.createElement('span');
-      name.className = 'leader-name';
-      name.textContent = leader.name;
-      info.appendChild(name);
-      
-      const score = document.createElement('span');
-      score.className = 'leader-score';
-      score.textContent = `${leader.totalScore} points`;
-      info.appendChild(score);
-      
-      leaderDiv.appendChild(info);
+      if (nameEl) nameEl.textContent = leader.name;
+      if (scoreEl) scoreEl.textContent = `${leader.totalScore} points`;
     }
   }
 
@@ -219,9 +219,16 @@ class ScoreDisplay {
 
     const sortedPlayers = [...this.players].sort((a, b) => b.totalScore - a.totalScore);
     
-    scoresDiv.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'scores-list';
+    // Find or create the scores-list container
+    let list = scoresDiv.querySelector('.scores-list');
+    if (!list) {
+      list = document.createElement('div');
+      list.className = 'scores-list';
+      scoresDiv.appendChild(list);
+    }
+    
+    // Clear existing items but keep the list container
+    list.innerHTML = '';
 
     sortedPlayers.forEach(player => {
       const item = document.createElement('div');
@@ -239,8 +246,6 @@ class ScoreDisplay {
       
       list.appendChild(item);
     });
-
-    scoresDiv.appendChild(list);
   }
 
   /**
@@ -250,12 +255,28 @@ class ScoreDisplay {
     const roundDiv = document.getElementById('round-info');
     if (!roundDiv) return;
 
-    roundDiv.innerHTML = `
-      <div class="round-info-content">
-        <span class="round-label">Round:</span>
-        <span class="round-number">${this.currentRound} / ${this.totalRounds}</span>
-      </div>
-    `;
+    // Find or create the round-info-content container
+    let content = roundDiv.querySelector('.round-info-content');
+    if (!content) {
+      content = document.createElement('div');
+      content.className = 'round-info-content';
+      roundDiv.appendChild(content);
+    }
+    
+    // Update the round number span
+    let roundNumber = content.querySelector('.round-number');
+    if (!roundNumber) {
+      const label = document.createElement('span');
+      label.className = 'round-label';
+      label.textContent = 'Round:';
+      content.appendChild(label);
+      
+      roundNumber = document.createElement('span');
+      roundNumber.className = 'round-number';
+      content.appendChild(roundNumber);
+    }
+    
+    roundNumber.textContent = `${this.currentRound} / ${this.totalRounds}`;
   }
 
   /**
