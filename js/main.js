@@ -41,9 +41,10 @@ function initializeGame(playerList) {
   gameState.currentPhase = 'setup';
 
   // Initialize scores for each player
+  // Note: No truthy check on id to avoid skipping players with id=0
   gameState.scores = {};
   playerList.forEach(player => {
-    if (player && player.id) {
+    if (player && player.id !== null && player.id !== undefined) {
       gameState.scores[player.id] = 0;
     }
   });
@@ -64,9 +65,11 @@ function startRound() {
 
   if (gameState.currentRound > gameState.maxRounds) {
     console.log('Game ended: all rounds completed');
+    endGame();
     return;
   }
 
+  // Clear bids from previous round
   gameState.bids = [];
   gameState.currentPhase = 'bid';
 
@@ -110,6 +113,7 @@ function activateBidPhase() {
     return;
   }
 
+  // Clear container and render bid phase UI
   bidPhaseContainer.innerHTML = '';
   showBidPhase(gameState.players, gameState.currentRound, handleBidSubmitted);
 }
@@ -133,6 +137,7 @@ function handleBidSubmitted(playerId, bidAmount) {
 
   console.log(`Player ${playerId} bid ${bidAmount} tricks`);
 
+  // Check if this player already submitted a bid and update it
   const existingBidIndex = gameState.bids.findIndex(b => b.playerId === playerId);
 
   if (existingBidIndex >= 0) {
@@ -144,6 +149,7 @@ function handleBidSubmitted(playerId, bidAmount) {
   console.log('Current bids:', gameState.bids);
   updateGameStatus();
 
+  // Check if all players have submitted bids
   if (gameState.bids.length === gameState.players.length) {
     displayBidSummary();
   }
@@ -230,28 +236,161 @@ function displayBidSummary() {
 
 /**
  * Handle the proceed to scoring button click
+ * Transitions to scoring phase and processes round bids
  */
 function handleProceedToScoring() {
   console.log('Proceeding to scoring phase');
 
+  // Save current round bids to history (bids still available in gameState.bids)
   const roundEntry = {
     round: gameState.currentRound,
     bids: [...gameState.bids]
   };
   gameState.roundHistory.push(roundEntry);
 
-  gameState.bids = [];
+  // Transition to scoring phase
   gameState.currentPhase = 'scoring';
+  updateGameStatus();
+
+  // Activate scoring phase
+  activateScoringPhase();
 }
 
-// Initialize game when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
-  const testPlayers = [
-    { id: 1, name: 'Alice' },
-    { id: 2, name: 'Bob' },
-    { id: 3, name: 'Charlie' },
-    { id: 4, name: 'Diana' }
-  ];
+/**
+ * Activate the scoring phase
+ * Processes bids, calculates scores, and prepares for next round
+ */
+function activateScoringPhase() {
+  console.log('Activating scoring phase for round', gameState.currentRound);
 
-  initializeGame(testPlayers);
-});
+  const bidPhaseContainer = document.getElementById('bid-phase-container');
+  if (!bidPhaseContainer) {
+    console.error('Bid phase container not found');
+    return;
+  }
+
+  // Clear container
+  bidPhaseContainer.innerHTML = '';
+
+  // Create scoring heading
+  const heading = document.createElement('h2');
+  heading.textContent = `Round ${gameState.currentRound} - Scoring`;
+  bidPhaseContainer.appendChild(heading);
+
+  // Create scoring content
+  const scoringContent = document.createElement('div');
+  scoringContent.className = 'scoring-content';
+
+  // Show bids being validated
+  const bidsList = document.createElement('p');
+  bidsList.textContent = `Validating ${gameState.bids.length} player bids for scoring...`;
+  scoringContent.appendChild(bidsList);
+
+  // For now, stub out scoring logic - in full implementation, this would:
+  // - Compare actual tricks won vs bids
+  // - Calculate points based on game rules
+  // - Update gameState.scores
+  // - Display final scores for the round
+
+  bidPhaseContainer.appendChild(scoringContent);
+
+  // Create action button to advance to next round
+  const actionDiv = document.createElement('div');
+  actionDiv.className = 'scoring-actions';
+
+  const btn = document.createElement('button');
+  btn.id = 'next-round-btn';
+  btn.className = 'btn btn-primary';
+  btn.textContent = 'Next Round';
+  btn.addEventListener('click', handleNextRound);
+
+  actionDiv.appendChild(btn);
+  bidPhaseContainer.appendChild(actionDiv);
+}
+
+/**
+ * Handle next round button click
+ * Advances to the next round or ends the game
+ */
+function handleNextRound() {
+  console.log('Advancing to next round');
+
+  // Clear bids now that scoring is complete
+  gameState.bids = [];
+
+  // Advance round counter
+  gameState.currentRound += 1;
+
+  // Start the next round (which resets phase to 'bid')
+  startRound();
+}
+
+/**
+ * End the game
+ * Display final scores and game completion message
+ */
+function endGame() {
+  console.log('Game ended');
+
+  gameState.currentPhase = 'complete';
+  updateGameStatus();
+
+  const bidPhaseContainer = document.getElementById('bid-phase-container');
+  if (!bidPhaseContainer) return;
+
+  bidPhaseContainer.innerHTML = '';
+
+  const heading = document.createElement('h2');
+  heading.textContent = 'Game Complete';
+  bidPhaseContainer.appendChild(heading);
+
+  const message = document.createElement('p');
+  message.textContent = `All ${gameState.maxRounds} rounds have been completed!`;
+  bidPhaseContainer.appendChild(message);
+
+  // Display final scores
+  const scoresDiv = document.createElement('div');
+  scoresDiv.className = 'final-scores';
+
+  const scoresHeading = document.createElement('h3');
+  scoresHeading.textContent = 'Final Scores';
+  scoresDiv.appendChild(scoresHeading);
+
+  const scoresList = document.createElement('ul');
+  gameState.players.forEach(player => {
+    const li = document.createElement('li');
+    const score = gameState.scores[player.id] || 0;
+    li.textContent = `${player.name}: ${score} points`;
+    scoresList.appendChild(li);
+  });
+
+  scoresDiv.appendChild(scoresList);
+  bidPhaseContainer.appendChild(scoresDiv);
+}
+
+/**
+ * Export functions for external use (e.g., test harness or UI controller)
+ */
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    gameState,
+    initializeGame,
+    startRound,
+    updateGameStatus,
+    renderRoundInfo,
+    activateBidPhase,
+    handleBidSubmitted,
+    displayBidSummary,
+    handleProceedToScoring,
+    activateScoringPhase,
+    handleNextRound,
+    endGame
+  };
+}
+
+// Game initialization hook - allows external code to initialize the game
+// by calling window.skullKingGame.initializeGame(players)
+window.skullKingGame = {
+  initializeGame,
+  gameState
+};
