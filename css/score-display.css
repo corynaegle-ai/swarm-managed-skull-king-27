@@ -79,7 +79,7 @@
   order: 3;
 }
 
-.ranking-item[data-place="n"] {
+.ranking-item[data-place="other"] {
   height: auto;
   background: #ecf0f1;
 }

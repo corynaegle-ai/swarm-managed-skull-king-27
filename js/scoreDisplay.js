@@ -54,6 +54,9 @@ class ScoreDisplay {
   updatePlayerScore(playerId, roundScore) {
     const player = this.players.find(p => p.id === playerId);
     if (player) {
+      // Make idempotent: subtract old score before adding new one
+      const oldScore = player.scores[this.currentRound] || 0;
+      player.totalScore -= oldScore;
       player.scores[this.currentRound] = roundScore;
       player.totalScore += roundScore;
     }
@@ -96,35 +99,68 @@ class ScoreDisplay {
     if (!finalStandingsDiv) return;
 
     const rankings = this.getFinalRankings();
-    let rankingsHTML = '<div class="final-rankings-container"><h2>Final Rankings</h2><div class="podium">';
-
+    finalStandingsDiv.innerHTML = '';
+    
+    const container = document.createElement('div');
+    container.className = 'final-rankings-container';
+    
+    const heading = document.createElement('h2');
+    heading.textContent = 'Final Rankings';
+    container.appendChild(heading);
+    
+    const podium = document.createElement('div');
+    podium.className = 'podium';
+    
     rankings.forEach((player, index) => {
       const place = index + 1;
       const placeText = this.getPlaceText(place);
+      // Use data-place values that match CSS selectors: "1", "2", "3" or "other"
+      const dataPlace = place <= 3 ? place.toString() : 'other';
       const playerClass = place === 1 ? 'winner' : '';
-
-      rankingsHTML += `
-        <div class="ranking-item ${playerClass}" data-place="${place}">
-          <div class="place-badge">${placeText}</div>
-          <div class="player-name">${player.name}</div>
-          <div class="final-score">${player.totalScore} points</div>
-        </div>
-      `;
+      
+      const item = document.createElement('div');
+      item.className = `ranking-item ${playerClass}`;
+      item.setAttribute('data-place', dataPlace);
+      
+      const badge = document.createElement('div');
+      badge.className = 'place-badge';
+      badge.textContent = placeText;
+      item.appendChild(badge);
+      
+      const name = document.createElement('div');
+      name.className = 'player-name';
+      name.textContent = player.name;
+      item.appendChild(name);
+      
+      const score = document.createElement('div');
+      score.className = 'final-score';
+      score.textContent = `${player.totalScore} points`;
+      item.appendChild(score);
+      
+      podium.appendChild(item);
     });
-
-    rankingsHTML += '</div></div>';
-    finalStandingsDiv.innerHTML = rankingsHTML;
+    
+    container.appendChild(podium);
+    finalStandingsDiv.appendChild(container);
   }
 
   /**
    * Get ordinal text for placement (1st, 2nd, 3rd, etc.)
+   * Handles English ordinal rules: teens (11-13) always use 'th',
+   * otherwise use 'st' for 1 mod 10, 'nd' for 2 mod 10, 'rd' for 3 mod 10
    * @param {number} place - Placement number
    * @returns {string} Ordinal text
    */
   getPlaceText(place) {
-    if (place === 1) return '1st';
-    if (place === 2) return '2nd';
-    if (place === 3) return '3rd';
+    // Handle teens (11-13) as special cases
+    if (place % 100 >= 11 && place % 100 <= 13) {
+      return `${place}th`;
+    }
+    // Apply ordinal suffix based on last digit
+    const lastDigit = place % 10;
+    if (lastDigit === 1) return `${place}st`;
+    if (lastDigit === 2) return `${place}nd`;
+    if (lastDigit === 3) return `${place}rd`;
     return `${place}th`;
   }
 
@@ -151,13 +187,26 @@ class ScoreDisplay {
       (prev.totalScore > current.totalScore) ? prev : current, this.players[0]);
 
     if (leader) {
-      leaderDiv.innerHTML = `
-        <div class="leader-info">
-          <span class="leader-label">Current Leader:</span>
-          <span class="leader-name">${leader.name}</span>
-          <span class="leader-score">${leader.totalScore} points</span>
-        </div>
-      `;
+      leaderDiv.innerHTML = '';
+      const info = document.createElement('div');
+      info.className = 'leader-info';
+      
+      const label = document.createElement('span');
+      label.className = 'leader-label';
+      label.textContent = 'Current Leader:';
+      info.appendChild(label);
+      
+      const name = document.createElement('span');
+      name.className = 'leader-name';
+      name.textContent = leader.name;
+      info.appendChild(name);
+      
+      const score = document.createElement('span');
+      score.className = 'leader-score';
+      score.textContent = `${leader.totalScore} points`;
+      info.appendChild(score);
+      
+      leaderDiv.appendChild(info);
     }
   }
 
@@ -168,20 +217,30 @@ class ScoreDisplay {
     const scoresDiv = document.getElementById('player-scores');
     if (!scoresDiv || this.gameEnded) return;
 
-    let scoresHTML = '<div class="scores-list">';
     const sortedPlayers = [...this.players].sort((a, b) => b.totalScore - a.totalScore);
+    
+    scoresDiv.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'scores-list';
 
     sortedPlayers.forEach(player => {
-      scoresHTML += `
-        <div class="player-score-item">
-          <span class="player-name">${player.name}</span>
-          <span class="player-total">${player.totalScore}</span>
-        </div>
-      `;
+      const item = document.createElement('div');
+      item.className = 'player-score-item';
+      
+      const name = document.createElement('span');
+      name.className = 'player-name';
+      name.textContent = player.name;
+      item.appendChild(name);
+      
+      const total = document.createElement('span');
+      total.className = 'player-total';
+      total.textContent = player.totalScore.toString();
+      item.appendChild(total);
+      
+      list.appendChild(item);
     });
 
-    scoresHTML += '</div>';
-    scoresDiv.innerHTML = scoresHTML;
+    scoresDiv.appendChild(list);
   }
 
   /**
