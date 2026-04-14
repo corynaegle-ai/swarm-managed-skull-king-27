@@ -23,9 +23,9 @@ npm install
 ### Basic Example
 
 ```javascript
-const { calculateHandScore, calculateRoundScores, updateTotalScores } = require('./src/scoring');
+const { calculateRoundScore, calculateTotalScore, validateRoundScoring } = require('./src/scoring');
 
-// Calculate score for a single hand
+// Calculate score for a single round
 const score = calculateRoundScore(
   5,      // bid amount
   5,      // tricks taken
@@ -93,20 +93,28 @@ Score = -10 × 2 = -20 points (regardless of trick count)
 
 ### Bonus Points
 
-Bonus points are **automatically applied only when the bid is exactly met on non-zero bids**. Zero bids never receive bonus points. The bonus is calculated as 10 × hand_number.
+Bonus points are **automatically included in the score only when the bid is exactly met on non-zero bids**. The bonus is calculated as 10 × hand_number and is automatically added to the base score.
+
+Zero bids never receive bonus points, even if exactly met (no tricks taken).
 
 ```
 Example 1 (Applied Automatically):
 bid=5, tricks=5, hand=1
-Score = (20 × 5) + (10 × 1) = +110 points
+baseScore = 20 × 5 = 100
+bonusScore = 10 × 1 = 10 (automatically applied for exact bid)
+totalScore = 100 + 10 = +110 points
 
 Example 2 (Not Applied - Bid Missed):
 bid=5, tricks=3, hand=1
-Score = -10 × 2 = -20 points (no bonus on missed bid)
+baseScore = -10 × |5-3| = -20
+bonusScore = 0 (no bonus on missed bid)
+totalScore = -20 points
 
 Example 3 (Not Applied - Zero Bid):
 bid=0, tricks=0, hand=1
-Score = 10 × 1 = +10 points (no bonus on zero bids, even if exact)
+baseScore = 10 × 1 = 10 (no bonus multiplier for zero bids)
+bonusScore = 0
+totalScore = +10 points
 ```
 
 ## API Reference
@@ -122,7 +130,7 @@ Calculates the score for a single round/hand.
 
 **Returns:** Object with:
 - `baseScore`: Score from bid correctness (±20 per trick for non-zero, ±10×hands for zero)
-- `bonusScore`: Automatic bonus points (10×hands if exact non-zero bid, 0 otherwise)
+- `bonusScore`: Automatic bonus points applied only for exact non-zero bids (10×hands if exact, 0 otherwise). Zero bids never receive bonus points.
 - `totalScore`: Final score (baseScore + bonusScore)
 - `isExact`: Boolean indicating if bid was met exactly
 - `breakdown`: Object with detailed breakdown and human-readable message
