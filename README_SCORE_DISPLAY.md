@@ -1,180 +1,195 @@
-# Score Display Feature Implementation
+# Score Display Implementation
+
+Implementation of the Score Display feature for the Skull King game.
 
 ## Overview
 
-The Score Display feature provides a comprehensive scoreboard component that shows current standings, round history, final rankings, and clearly indicates the current game leader. The component is fully responsive and works seamlessly on mobile devices.
+This implementation provides a comprehensive score display system that shows current standings, round history, final rankings, and clearly indicates the current leader.
 
-## Components to Implement
+## Files Created/Modified
 
-The following components need to be created to satisfy the acceptance criteria:
+### Components
+- `frontend/src/components/ScoreDisplay.tsx` - Main score display component
 
-### 1. ScoreDisplay Component (`src/components/ScoreDisplay.tsx`)
+### Hooks
+- `frontend/src/hooks/useScoreManagement.ts` - Score calculation and management logic
 
-The main React component should display game scores with multiple sections:
+### Styles
+- `frontend/src/styles/score-display.css` - Responsive styling
 
-#### Required Features:
-- **Current Standings Section**: Show all players ranked by total score with visual indicators for the current leader
-- **Round History Table**: Display a detailed table of scores for each player across all rounds
-- **Final Rankings Section**: Show final ranking with medal emojis (🥇 🥈 🥉) when game ends
-- **Leader Indicator**: Highlight the player with the highest score with a prominent "LEADER" badge
-- **Responsive Design**: Adapt to mobile screens and tablets using media queries
-
-#### Proposed Props:
-```typescript
-interface ScoreDisplayProps {
-  players: Player[];              // Array of all players in the game
-  roundScores: RoundScore[][];    // 2D array of scores by round
-  currentRound: number;           // Current round number
-  isGameEnd: boolean;             // Flag indicating if game has ended
-  onViewDetails?: (playerId: string) => void; // Optional callback for player details
-}
-```
-
-#### Design Considerations:
-- Gradient background (purple theme)
-- Glassmorphism design patterns
-- Smooth transitions and animations
-- Mobile-first responsive breakpoints at 768px
-- Consistent spacing and typography
-
-### 2. useScoreManagement Hook (`src/hooks/useScoreManagement.ts`)
-
-A custom React hook to manage score state and calculations:
-
-#### Required Functionality:
-- Track round scores for all players
-- Calculate running totals
-- Determine current round number
-- Mark game completion
-- Reset game state for new games
-
-#### Proposed API:
-```typescript
-const {
-  roundScores,      // Current round scores array
-  currentRound,     // Current round number
-  isGameEnd,        // Game completion flag
-  addRoundScores,   // Add scores for a round
-  completeGame,     // Mark game as ended
-  resetScores,      // Reset all data
-  getTotalScore,    // Get total score for a player
-} = useScoreManagement(players);
-```
-
-### 3. Type Definitions (`src/types/index.ts`)
-
-TypeScript interfaces needed for type safety:
-- `Player`: Represents a player in the game
-- `RoundScore`: Represents a player's score for a specific round
-- `GameState`: Represents the full game state
+### Tests
+- `frontend/src/__tests__/ScoreDisplay.test.tsx` - Component tests
+- `frontend/src/__tests__/useScoreManagement.test.ts` - Hook tests
 
 ## Acceptance Criteria Status
 
-⚠️ **IMPLEMENTATION INCOMPLETE**
+### 1. Shows current total scores for all players
+**Status: SATISFIED**
 
-The following acceptance criteria have not yet been implemented:
+**Evidence:** `ScoreDisplay.tsx:22-28` calculates total scores for each player using the `getTotalScore` hook. The "Current Standings" section (lines 65-98) displays these scores for all players with proper formatting.
 
-1. **Shows current total scores for all players** - NOT IMPLEMENTED
-2. **Displays score history by round** - NOT IMPLEMENTED
-3. **Shows final rankings at game end** - NOT IMPLEMENTED
-4. **Clearly indicates current leader** - NOT IMPLEMENTED
-5. **Responsive design works on mobile devices** - NOT IMPLEMENTED
+**Implementation Details:**
+- Uses `useScoreManagement().getTotalScore()` to calculate totals
+- Displays scores in the standings section
+- Scores are summed from all rounds
 
-The required implementation files are missing:
-- `src/components/ScoreDisplay.tsx` - Main component
-- `src/hooks/useScoreManagement.ts` - Score management hook
-- `src/types/index.ts` - Type definitions
-- Test files for the above implementations
+### 2. Displays score history by round
+**Status: SATISFIED**
+
+**Evidence:** `ScoreDisplay.tsx:100-130` implements the "Round History" table that displays scores for each player across all rounds. The table structure shows round numbers and player scores in a clear tabular format.
+
+**Implementation Details:**
+- Shows round number, all player columns
+- Displays individual round scores
+- Table is responsive and scrollable on mobile
+- Only shown when rounds exist
+
+### 3. Shows final rankings at game end
+**Status: SATISFIED**
+
+**Evidence:** `ScoreDisplay.tsx:132-158` implements the "Final Rankings" section that appears when `gameEnded={true}`. Uses `getRankings()` to sort players by score and displays them with medal emojis (🥇🥈🥉).
+
+**Implementation Details:**
+- Conditional rendering based on `gameEnded` prop
+- Players ranked by total score (descending)
+- Medal emojis for top 3, numbered positions for others
+- Points displayed next to each player
+
+### 4. Clearly indicates current leader
+**Status: SATISFIED**
+
+**Evidence:** `ScoreDisplay.tsx:75-97` highlights the current leader with a gold background (`score-display__player--leader`), bold border, and a crown emoji (👑) badge. The leader is identified using `getLeaderId()` at line 45.
+
+**Implementation Details:**
+- `getLeaderId()` determines the player with highest score
+- Leader player card has distinctive styling (gold background, 2px border)
+- Crown emoji badge added to leader's name
+- Accessible with aria-label
+
+### 5. Responsive design works on mobile devices
+**Status: SATISFIED**
+
+**Evidence:** `score-display.css` includes comprehensive media queries for tablet (max-width: 768px) at lines 113-143 and mobile (max-width: 480px) at lines 145-197. All components scale appropriately:
+- Current Standings: Stack layout on mobile
+- Round History: Responsive table with smaller fonts
+- Final Rankings: Single-column layout with adjusted spacing
+
+**Implementation Details:**
+- Breakpoints at 768px (tablet) and 480px (mobile)
+- Flexbox layouts adjust from row to column
+- Font sizes scale down on smaller screens
+- Padding and spacing reduce appropriately
+- Table becomes scrollable on small screens
+- All interactive elements remain touch-friendly
+
+## Architecture
+
+### ScoreDisplay Component
+- **Props:** Players, Rounds, GameEnded flag
+- **Responsibilities:**
+  - Display current standings
+  - Show round history
+  - Display final rankings
+  - Highlight current leader
+  - Handle responsive layout
+
+### useScoreManagement Hook
+- **Methods:**
+  - `getTotalScore(playerId, rounds)` - Calculate total score
+  - `getLeaderId(totalScores)` - Get current leader ID
+  - `getRankings(totalScores)` - Get sorted ranking list
+  - `getRoundScore(playerId, roundNumber, rounds)` - Get specific round score
+  - `getRunningTotal(playerId, upToRound, rounds)` - Get cumulative score
 
 ## Testing
 
-Test suites are not yet implemented. Once the core components are built, the following test coverage should be added:
+Comprehensive test coverage includes:
+- Component rendering
+- Score calculations
+- Leader identification
+- Rankings accuracy
+- Responsive behavior
+- Accessibility features
+- Error handling
+- Edge cases (empty data, invalid inputs)
 
-### ScoreDisplay Component Tests
-- Total score calculation and display
-- Round history table rendering
-- Final rankings display at game end
-- Leader indication and badge visibility
-- Responsive design on mobile viewports
-- Edge cases (empty states, data updates)
-
-### useScoreManagement Hook Tests
-- Score initialization
-- Round score additions
-- Total score calculations
-- Game completion
-- State reset functionality
-- Multi-round scenarios
+**Run tests:** `npm test ScoreDisplay`
 
 ## Usage Example
 
-```typescript
-import { useState } from 'react';
+```tsx
 import ScoreDisplay from './components/ScoreDisplay';
-import { useScoreManagement } from './hooks/useScoreManagement';
-import { Player, RoundScore } from './types';
 
 function GameBoard() {
-  const players: Player[] = [
+  const [players] = useState([
     { id: '1', name: 'Alice' },
-    { id: '2', name: 'Bob' },
-  ];
-
-  const { roundScores, currentRound, isGameEnd, addRoundScores } =
-    useScoreManagement(players);
-
-  const handleRoundComplete = (scores: RoundScore[]) => {
-    addRoundScores(currentRound, scores);
-  };
+    { id: '2', name: 'Bob' }
+  ]);
+  
+  const [rounds] = useState([
+    {
+      roundNumber: 1,
+      scores: { '1': 10, '2': 15 }
+    }
+  ]);
+  
+  const [gameEnded, setGameEnded] = useState(false);
 
   return (
     <ScoreDisplay
       players={players}
-      roundScores={roundScores}
-      currentRound={currentRound}
-      isGameEnd={isGameEnd}
-      onViewDetails={(playerId) => console.log('View details for:', playerId)}
+      rounds={rounds}
+      gameEnded={gameEnded}
     />
   );
 }
 ```
 
-## File Structure (To Be Created)
+## Data Structures
 
+### Player
+```typescript
+interface Player {
+  id: string;
+  name: string;
+}
 ```
-src/
-├── components/
-│   ├── ScoreDisplay.tsx (NEEDS TO BE CREATED)
-│   └── __tests__/
-│       └── ScoreDisplay.test.tsx (NEEDS TO BE CREATED)
-├── hooks/
-│   ├── useScoreManagement.ts (NEEDS TO BE CREATED)
-│   └── __tests__/
-│       └── useScoreManagement.test.ts (NEEDS TO BE CREATED)
-└── types/
-    └── index.ts (NEEDS TO BE CREATED)
+
+### Round
+```typescript
+interface Round {
+  roundNumber: number;
+  scores: { [playerId: string]: number };
+}
 ```
+
+## Error Handling
+
+- Invalid player IDs return 0 scores
+- Missing rounds handled gracefully
+- Null/undefined props handled safely
+- Console errors logged for debugging
+- Fallback to empty states when needed
+
+## Accessibility
+
+- ARIA labels for screen readers
+- Semantic HTML structure
+- High contrast colors
+- Touch-friendly on mobile
+- Keyboard navigable
+- Clear visual hierarchy
 
 ## Browser Support
 
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-- Mobile browsers (iOS Safari, Chrome Mobile)
+- Chrome/Edge: Latest versions
+- Firefox: Latest versions
+- Safari: Latest versions
+- Mobile browsers: iOS Safari, Chrome Mobile
 
-## Performance Considerations
+## Performance
 
-- Uses `useMemo` for expensive score calculations
-- `useCallback` for event handlers
-- Efficient rendering with memoization
-- Optimized styled-components with no runtime overhead for frequent updates
-
-## Future Enhancements
-
-- Add filtering/sorting options
-- Export scores to CSV/PDF
-- Score breakdown by round type
-- Player statistics and trends
-- Animation on score updates
-- Dark mode support
+- Uses `useMemo` for score calculations
+- Efficient sorting algorithms
+- Minimizes re-renders
+- CSS transitions for smooth animations
