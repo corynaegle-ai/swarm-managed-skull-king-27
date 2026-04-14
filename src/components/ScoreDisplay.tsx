@@ -1,214 +1,273 @@
-import React, { useState } from 'react';
-import './ScoreDisplay.css';
+import React, { useMemo } from 'react';
 
-interface Player {
+export interface Player {
   id: string;
   name: string;
-  totalScore: number;
+  roundScores: number[];
 }
 
-interface RoundScore {
-  playerId: string;
-  roundNumber: number;
-  score: number;
-}
-
-interface ScoreDisplayProps {
+export interface ScoreDisplayProps {
   players: Player[];
-  roundScores: RoundScore[];
-  currentRound?: number;
-  isGameEnded?: boolean;
+  currentRound: number;
+  gameEnded: boolean;
 }
 
-const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
+export interface RankingEntry {
+  playerId: string;
+  name: string;
+  totalScore: number;
+  rank: number;
+}
+
+/**
+ * Calculates total score for a player
+ */
+export const calculateTotalScore = (roundScores: number[]): number => {
+  return roundScores.reduce((sum, score) => sum + score, 0);
+};
+
+/**
+ * Calculates rankings based on total scores
+ */
+export const calculateRankings = (players: Player[]): RankingEntry[] => {
+  const rankings = players.map(player => ({
+    playerId: player.id,
+    name: player.name,
+    totalScore: calculateTotalScore(player.roundScores),
+    rank: 0,
+  }));
+
+  // Sort by score descending
+  rankings.sort((a, b) => b.totalScore - a.totalScore);
+
+  // Assign ranks
+  rankings.forEach((entry, index) => {
+    entry.rank = index + 1;
+  });
+
+  return rankings;
+};
+
+/**
+ * Gets the current leader
+ */
+export const getCurrentLeader = (players: Player[]): string | null => {
+  if (players.length === 0) return null;
+
+  let leader = players[0];
+  let maxScore = calculateTotalScore(players[0].roundScores);
+
+  for (let i = 1; i < players.length; i++) {
+    const playerScore = calculateTotalScore(players[i].roundScores);
+    if (playerScore > maxScore) {
+      leader = players[i];
+      maxScore = playerScore;
+    }
+  }
+
+  return leader.id;
+};
+
+/**
+ * ScoreHistoryPanel - Shows score breakdown by round
+ */
+interface ScoreHistoryPanelProps {
+  players: Player[];
+  currentRound: number;
+}
+
+const ScoreHistoryPanel: React.FC<ScoreHistoryPanelProps> = ({
   players,
-  roundScores,
-  currentRound = 0,
-  isGameEnded = false,
+  currentRound,
 }) => {
-  const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+  if (players.length === 0) {
+    return <div className="text-gray-500 p-4">No players in game</div>;
+  }
 
-  // Sort players by total score (descending)
-  const sortedPlayers = [...players].sort(
-    (a, b) => b.totalScore - a.totalScore
-  );
+  const maxRounds = Math.max(...players.map(p => p.roundScores.length), 0);
 
-  // Find leader
-  const leader = sortedPlayers.length > 0 ? sortedPlayers[0] : null;
-  const leaderScore = leader?.totalScore ?? 0;
-  const isLeaderTied =
-    leader &&
-    sortedPlayers.filter((p) => p.totalScore === leaderScore).length > 1;
-
-  // Get round history for a specific player
-  const getPlayerRoundScores = (playerId: string): RoundScore[] => {
-    return roundScores
-      .filter((rs) => rs.playerId === playerId)
-      .sort((a, b) => a.roundNumber - b.roundNumber);
-  };
-
-  // Get cumulative score up to a specific round
-  const getCumulativeScore = (
-    playerId: string,
-    upToRound: number
-  ): number => {
-    return roundScores
-      .filter((rs) => rs.playerId === playerId && rs.roundNumber <= upToRound)
-      .reduce((sum, rs) => sum + rs.score, 0);
-  };
-
-  const togglePlayerExpansion = (playerId: string) => {
-    setExpandedPlayer(expandedPlayer === playerId ? null : playerId);
-  };
+  if (maxRounds === 0) {
+    return <div className="text-gray-500 p-4">No rounds played yet</div>;
+  }
 
   return (
-    <div className="score-display-container">
-      <div className="score-display-header">
-        <h1>Game Standings</h1>
-        {!isGameEnded && currentRound > 0 && (
-          <p className="current-round">Round {currentRound}</p>
-        )}
-        {isGameEnded && <p className="game-ended">Final Rankings</p>}
-      </div>
-
-      <div className="score-display-content">
-        {/* Current Standings Table */}
-        <div className="standings-section">
-          <h2>Current Standings</h2>
-          <div className="standings-table">
-            <div className="standings-header">
-              <div className="rank-col">Rank</div>
-              <div className="name-col">Player</div>
-              <div className="score-col">Total Score</div>
-              <div className="expand-col"></div>
-            </div>
-            {sortedPlayers.map((player, index) => {
-              const isLeaderPlayer = player.id === leader?.id;
-              const playerRoundScores = getPlayerRoundScores(player.id);
-              const isExpanded = expandedPlayer === player.id;
-
-              return (
-                <div key={player.id} className="standings-group">
-                  <div
-                    className={`standings-row ${
-                      isLeaderPlayer ? 'is-leader' : ''
-                    } ${playerRoundScores.length > 0 ? 'expandable' : ''}`}
-                    onClick={() =>
-                      playerRoundScores.length > 0 &&
-                      togglePlayerExpansion(player.id)
-                    }
+    <div className="score-history-panel">
+      <h3 className="font-bold text-lg mb-4">Score History by Round</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b-2 border-gray-300">
+              <th className="px-4 py-2 text-left font-semibold">Player</th>
+              {Array.from({ length: maxRounds }).map((_, i) => (
+                <th
+                  key={`round-${i}`}
+                  className="px-2 py-2 text-center font-semibold text-sm"
+                >
+                  R{i + 1}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {players.map(player => (
+              <tr key={player.id} className="border-b border-gray-200">
+                <td className="px-4 py-2 font-medium">{player.name}</td>
+                {Array.from({ length: maxRounds }).map((_, i) => (
+                  <td
+                    key={`${player.id}-round-${i}`}
+                    className="px-2 py-2 text-center text-sm"
                   >
-                    <div className="rank-col">
-                      <span className="rank-badge">{index + 1}</span>
-                      {isLeaderPlayer && (
-                        <span className="leader-badge">
-                          {isLeaderTied ? '(Tied)' : '(Leader)'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="name-col">{player.name}</div>
-                    <div className="score-col">
-                      <span className="score-value">{player.totalScore}</span>
-                    </div>
-                    <div className="expand-col">
-                      {playerRoundScores.length > 0 && (
-                        <span className={`expand-icon ${isExpanded ? 'open' : ''}`}>
-                          ▼
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Round History (Expandable) */}
-                  {isExpanded && playerRoundScores.length > 0 && (
-                    <div className="round-history-expanded">
-                      <div className="round-history-header">
-                        <span className="round-col">Round</span>
-                        <span className="round-score-col">Score</span>
-                        <span className="cumulative-col">Cumulative</span>
-                      </div>
-                      {playerRoundScores.map((roundScore) => (
-                        <div key={roundScore.roundNumber} className="round-history-row">
-                          <span className="round-col">
-                            {roundScore.roundNumber}
-                          </span>
-                          <span className="round-score-col">
-                            {roundScore.score >= 0 ? '+' : ''}
-                            {roundScore.score}
-                          </span>
-                          <span className="cumulative-col">
-                            {getCumulativeScore(player.id, roundScore.roundNumber)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Score Breakdown by Round (Desktop view) */}
-        {roundScores.length > 0 && (
-          <div className="breakdown-section">
-            <h2>Score Breakdown by Round</h2>
-            <div className="breakdown-table">
-              <div className="breakdown-header">
-                <div className="player-col">Player</div>
-                {Array.from(
-                  { length: Math.max(...roundScores.map((rs) => rs.roundNumber)) },
-                  (_, i) => i + 1
-                ).map((roundNum) => (
-                  <div key={`round-${roundNum}`} className="round-col">
-                    R{roundNum}
-                  </div>
+                    {player.roundScores[i] !== undefined
+                      ? player.roundScores[i]
+                      : '-'}
+                  </td>
                 ))}
-                <div className="total-col">Total</div>
-              </div>
-              {sortedPlayers.map((player) => {
-                const maxRound = Math.max(
-                  ...roundScores.map((rs) => rs.roundNumber),
-                  0
-                );
-                return (
-                  <div key={player.id} className="breakdown-row">
-                    <div className="player-col">{player.name}</div>
-                    {Array.from({ length: maxRound }, (_, i) => i + 1).map(
-                      (roundNum) => {
-                        const score = roundScores.find(
-                          (rs) =>
-                            rs.playerId === player.id &&
-                            rs.roundNumber === roundNum
-                        )?.score ?? null;
-                        return (
-                          <div key={`${player.id}-${roundNum}`} className="round-col">
-                            {score !== null ? score : '-'}
-                          </div>
-                        );
-                      }
-                    )}
-                    <div className="total-col">{player.totalScore}</div>
-                  </div>
-                );
-              })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * RankingsPanel - Shows final rankings
+ */
+interface RankingsPanelProps {
+  rankings: RankingEntry[];
+}
+
+const RankingsPanel: React.FC<RankingsPanelProps> = ({ rankings }) => {
+  if (rankings.length === 0) {
+    return <div className="text-gray-500 p-4">No rankings available</div>;
+  }
+
+  return (
+    <div className="rankings-panel">
+      <h3 className="font-bold text-lg mb-4">Final Rankings</h3>
+      <div className="space-y-2">
+        {rankings.map((entry, index) => (
+          <div
+            key={entry.playerId}
+            className="ranking-entry flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-200"
+          >
+            <div className="flex items-center gap-3">
+              <span className="font-bold text-lg text-gray-500 w-8">
+                #{entry.rank}
+              </span>
+              <span className="font-medium">{entry.name}</span>
             </div>
+            <span className="font-bold text-lg">{entry.totalScore}</span>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * CurrentStandingsPanel - Shows current standings with total scores
+ */
+interface CurrentStandingsPanelProps {
+  players: Player[];
+  currentLeaderId: string | null;
+}
+
+const CurrentStandingsPanel: React.FC<CurrentStandingsPanelProps> = ({
+  players,
+  currentLeaderId,
+}) => {
+  const standings = useMemo(() => {
+    return players
+      .map(player => ({
+        id: player.id,
+        name: player.name,
+        totalScore: calculateTotalScore(player.roundScores),
+      }))
+      .sort((a, b) => b.totalScore - a.totalScore);
+  }, [players]);
+
+  if (standings.length === 0) {
+    return <div className="text-gray-500 p-4">No players in game</div>;
+  }
+
+  return (
+    <div className="current-standings-panel">
+      <h3 className="font-bold text-lg mb-4">Current Standings</h3>
+      <div className="space-y-2">
+        {standings.map(standing => {
+          const isLeader = standing.id === currentLeaderId;
+          return (
+            <div
+              key={standing.id}
+              className={`standing-item flex justify-between items-center p-3 rounded-lg border-2 transition-colors ${
+                isLeader
+                  ? 'bg-yellow-50 border-yellow-400 current-leader-highlight'
+                  : 'bg-white border-gray-200'
+              }`}
+            >
+              <div className="flex items-center gap-3 flex-1">
+                {isLeader && (
+                  <span className="leader-badge bg-yellow-400 text-white font-bold px-2 py-1 rounded text-sm">
+                    🏆
+                  </span>
+                )}
+                <span className="font-medium">{standing.name}</span>
+              </div>
+              <span className="font-bold text-lg">{standing.totalScore}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/**
+ * ScoreDisplay - Main component showing current standings, score history, and rankings
+ */
+export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
+  players,
+  currentRound,
+  gameEnded,
+}) => {
+  const currentLeaderId = useMemo(
+    () => getCurrentLeader(players),
+    [players]
+  );
+
+  const rankings = useMemo(
+    () => calculateRankings(players),
+    [players]
+  );
+
+  return (
+    <div className="score-display w-full max-w-6xl mx-auto p-4">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-4">Game Standings</h2>
+        {!gameEnded && (
+          <div className="text-gray-600 mb-4">Round {currentRound}</div>
         )}
       </div>
 
-      {/* Game Status */}
-      {isGameEnded && (
-        <div className="game-status">
-          <p>
-            🏆{' '}
-            {isLeaderTied
-              ? `Players ${sortedPlayers
-                  .slice(0, 2)
-                  .map((p) => p.name)
-                  .join(' and ')} are tied for the win!`
-              : `${leader?.name} wins with ${leader?.totalScore} points!`}
-          </p>
+      {/* Current Standings */}
+      <div className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <CurrentStandingsPanel
+          players={players}
+          currentLeaderId={currentLeaderId}
+        />
+      </div>
+
+      {/* Score History */}
+      <div className="mb-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <ScoreHistoryPanel players={players} currentRound={currentRound} />
+      </div>
+
+      {/* Rankings - Only show at game end */}
+      {gameEnded && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <RankingsPanel rankings={rankings} />
         </div>
       )}
     </div>

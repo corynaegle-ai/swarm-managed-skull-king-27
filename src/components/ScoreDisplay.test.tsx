@@ -1,155 +1,241 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import ScoreDisplay from './ScoreDisplay';
-import { Game } from '../types';
+import {
+  ScoreDisplay,
+  calculateTotalScore,
+  calculateRankings,
+  getCurrentLeader,
+  Player,
+} from './ScoreDisplay';
 
 describe('ScoreDisplay Component', () => {
-  const mockGame: Game = {
-    id: 'game-1',
-    players: [
-      {
-        id: 'player-1',
-        name: 'Alice',
-        rounds: [
-          { bid: 2, tricks: 2, score: 20 },
-          { bid: 3, tricks: 2, score: -10 },
-          { bid: 1, tricks: 1, score: 10 },
-        ],
-      },
-      {
-        id: 'player-2',
-        name: 'Bob',
-        rounds: [
-          { bid: 1, tricks: 1, score: 10 },
-          { bid: 2, tricks: 2, score: 20 },
-          { bid: 3, tricks: 1, score: -20 },
-        ],
-      },
-      {
-        id: 'player-3',
-        name: 'Charlie',
-        rounds: [
-          { bid: 3, tricks: 3, score: 30 },
-          { bid: 1, tricks: 0, score: -10 },
-          { bid: 2, tricks: 2, score: 20 },
-        ],
-      },
-    ],
-    currentRound: 3,
-    status: 'active',
-  };
+  const mockPlayers: Player[] = [
+    {
+      id: 'player-1',
+      name: 'Alice',
+      roundScores: [10, 20, 15],
+    },
+    {
+      id: 'player-2',
+      name: 'Bob',
+      roundScores: [15, 15, 20],
+    },
+    {
+      id: 'player-3',
+      name: 'Charlie',
+      roundScores: [5, 10, 8],
+    },
+  ];
 
-  const mockGameEnded: Game = {
-    ...mockGame,
-    status: 'ended',
-  };
+  describe('calculateTotalScore', () => {
+    it('should calculate total score correctly', () => {
+      expect(calculateTotalScore([10, 20, 15])).toBe(45);
+    });
 
-  it('renders without crashing', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(screen.getByText('Current Standings')).toBeInTheDocument();
+    it('should handle empty array', () => {
+      expect(calculateTotalScore([])).toBe(0);
+    });
+
+    it('should handle negative scores', () => {
+      expect(calculateTotalScore([10, -5, 20])).toBe(25);
+    });
   });
 
-  it('displays current total scores for all players', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    // Alice: 20 + (-10) + 10 = 20
-    // Bob: 10 + 20 + (-20) = 10
-    // Charlie: 30 + (-10) + 20 = 40
-    expect(screen.getByText('20')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('40')).toBeInTheDocument();
+  describe('calculateRankings', () => {
+    it('should calculate rankings based on total scores', () => {
+      const rankings = calculateRankings(mockPlayers);
+      expect(rankings).toHaveLength(3);
+      expect(rankings[0].name).toBe('Bob');
+      expect(rankings[0].rank).toBe(1);
+      expect(rankings[0].totalScore).toBe(50);
+    });
+
+    it('should assign correct ranks in descending order', () => {
+      const rankings = calculateRankings(mockPlayers);
+      expect(rankings[0].rank).toBe(1);
+      expect(rankings[1].rank).toBe(2);
+      expect(rankings[2].rank).toBe(3);
+    });
+
+    it('should handle empty players array', () => {
+      const rankings = calculateRankings([]);
+      expect(rankings).toHaveLength(0);
+    });
   });
 
-  it('displays score history by round', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(screen.getByText('Round History')).toBeInTheDocument();
-    // Check for round column headers
-    expect(screen.getByText('R1')).toBeInTheDocument();
-    expect(screen.getByText('R2')).toBeInTheDocument();
-    expect(screen.getByText('R3')).toBeInTheDocument();
+  describe('getCurrentLeader', () => {
+    it('should return player with highest score', () => {
+      const leaderId = getCurrentLeader(mockPlayers);
+      expect(leaderId).toBe('player-2'); // Bob has 50 points
+    });
+
+    it('should return null for empty players array', () => {
+      const leaderId = getCurrentLeader([]);
+      expect(leaderId).toBeNull();
+    });
+
+    it('should handle single player', () => {
+      const leaderId = getCurrentLeader([mockPlayers[0]]);
+      expect(leaderId).toBe('player-1');
+    });
   });
 
-  it('shows score breakdown details for each player', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
-    expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText('Bob')).toBeInTheDocument();
-    expect(screen.getByText('Charlie')).toBeInTheDocument();
+  describe('ScoreDisplay Component Rendering', () => {
+    it('should render current standings', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      expect(screen.getByText('Game Standings')).toBeInTheDocument();
+      expect(screen.getByText('Current Standings')).toBeInTheDocument();
+    });
+
+    it('should display all player names in current standings', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      expect(screen.getByText('Alice')).toBeInTheDocument();
+      expect(screen.getByText('Bob')).toBeInTheDocument();
+      expect(screen.getByText('Charlie')).toBeInTheDocument();
+    });
+
+    it('should display total scores correctly', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      expect(screen.getByText('50')).toBeInTheDocument(); // Bob's total
+      expect(screen.getByText('45')).toBeInTheDocument(); // Alice's total
+      expect(screen.getByText('23')).toBeInTheDocument(); // Charlie's total
+    });
+
+    it('should display score history', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      expect(screen.getByText('Score History by Round')).toBeInTheDocument();
+    });
+
+    it('should display current round', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={2}
+          gameEnded={false}
+        />
+      );
+      expect(screen.getByText('Round 2')).toBeInTheDocument();
+    });
+
+    it('should display rankings when game ended', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={3}
+          gameEnded={true}
+        />
+      );
+      expect(screen.getByText('Final Rankings')).toBeInTheDocument();
+    });
+
+    it('should not display rankings when game not ended', () => {
+      render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      expect(screen.queryByText('Final Rankings')).not.toBeInTheDocument();
+    });
+
+    it('should indicate current leader', () => {
+      const { container } = render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      // Check for leader badge
+      const leaderBadge = container.querySelector('.leader-badge');
+      expect(leaderBadge).toBeInTheDocument();
+    });
+
+    it('should highlight current leader with special styling', () => {
+      const { container } = render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      // Check for current-leader-highlight class
+      const highlight = container.querySelector('.current-leader-highlight');
+      expect(highlight).toBeInTheDocument();
+    });
+
+    it('should handle empty players array', () => {
+      render(
+        <ScoreDisplay
+          players={[]}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      expect(screen.getByText('Game Standings')).toBeInTheDocument();
+    });
   });
 
-  it('shows final rankings when game has ended', () => {
-    render(<ScoreDisplay game={mockGameEnded} gameEnded={true} />);
-    expect(screen.getByText('Final Rankings')).toBeInTheDocument();
-  });
+  describe('Responsive Design', () => {
+    it('should render with max-width constraint', () => {
+      const { container } = render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      const scoreDisplay = container.querySelector('.score-display');
+      expect(scoreDisplay).toHaveClass('max-w-6xl');
+    });
 
-  it('does not show final rankings when game is active', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(screen.queryByText('Final Rankings')).not.toBeInTheDocument();
-  });
+    it('should render with padding for mobile', () => {
+      const { container } = render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      const scoreDisplay = container.querySelector('.score-display');
+      expect(scoreDisplay).toHaveClass('p-4');
+    });
 
-  it('indicates the current leader during active game', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    // Charlie has the highest score (40), should be marked as leading
-    const leadingBadges = screen.getAllByText('Leading');
-    expect(leadingBadges.length).toBeGreaterThan(0);
-  });
-
-  it('indicates the current leader even when game has ended', () => {
-    render(<ScoreDisplay game={mockGameEnded} gameEnded={true} />);
-    // Leader indication should persist after game ends
-    expect(screen.getByText('Leading')).toBeInTheDocument();
-  });
-
-  it('handles empty player list gracefully', () => {
-    const emptyGame: Game = {
-      ...mockGame,
-      players: [],
-    };
-    render(<ScoreDisplay game={emptyGame} gameEnded={false} />);
-    expect(screen.getByText('No players in game')).toBeInTheDocument();
-  });
-
-  it('handles games with no rounds played', () => {
-    const noRoundsGame: Game = {
-      ...mockGame,
-      players: mockGame.players.map((p) => ({ ...p, rounds: [] })),
-    };
-    render(<ScoreDisplay game={noRoundsGame} gameEnded={false} />);
-    expect(screen.getByText('No rounds played yet')).toBeInTheDocument();
-  });
-
-  it('displays positive and negative scores correctly', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(screen.getByText('Score Breakdown')).toBeInTheDocument();
-    // The component should render without errors
-  });
-
-  it('calculates and displays correct total scores', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    // Alice total: 20
-    // Bob total: 10
-    // Charlie total: 40
-    expect(screen.getByText('20')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
-    expect(screen.getByText('40')).toBeInTheDocument();
-  });
-
-  it('displays correct rankings based on scores', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    const leaderboardEntries = screen.getAllByText(/^(Alice|Bob|Charlie)$/);
-    expect(leaderboardEntries.length).toBeGreaterThan(0);
-  });
-
-  it('shows player names in leaderboard', () => {
-    render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText('Bob')).toBeInTheDocument();
-    expect(screen.getByText('Charlie')).toBeInTheDocument();
-  });
-
-  it('renders responsive layout', () => {
-    const { container } = render(<ScoreDisplay game={mockGame} gameEnded={false} />);
-    expect(container.querySelector('.score-display')).toBeInTheDocument();
-    expect(container.querySelector('.leaderboard')).toBeInTheDocument();
-    expect(container.querySelector('.breakdown-details')).toBeInTheDocument();
+    it('should have scrollable score history on mobile', () => {
+      const { container } = render(
+        <ScoreDisplay
+          players={mockPlayers}
+          currentRound={1}
+          gameEnded={false}
+        />
+      );
+      const overflowContainer = container.querySelector('.overflow-x-auto');
+      expect(overflowContainer).toBeInTheDocument();
+    });
   });
 });

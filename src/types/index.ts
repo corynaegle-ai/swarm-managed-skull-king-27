@@ -1,18 +1,33 @@
-export interface Round {
-  bid: number;
-  tricks: number;
-  score: number;
-}
+/**
+ * Type definitions for Skull King game
+ */
 
 export interface Player {
   id: string;
   name: string;
-  rounds: Round[];
+  roundScores: number[];
 }
 
-export interface Game {
-  id: string;
+export interface GameState {
   players: Player[];
   currentRound: number;
-  status: 'active' | 'ended';
+  gameEnded: boolean;
+  currentPhase: GamePhase;
+}
+
+export enum GamePhase {
+  BIDDING = 'bidding',
+  PLAYING = 'playing',
+  SCORING = 'scoring',
+  FINISHED = 'finished',
+}
+
+export interface Round {
+  roundNumber: number;
+  bids: Map<string, number>;
+  tricks: Array<{
+    playerId: string;
+    cards: string[];
+  }>;
+  scores: Map<string, number>;
 }
