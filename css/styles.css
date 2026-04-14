@@ -1,0 +1,747 @@
+/* ===========================
+   Global Styles
+   =========================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+main {
+    padding: 40px 20px;
+}
+
+section {
+    margin-bottom: 40px;
+}
+
+section h2 {
+    color: #667eea;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 10px;
+}
+
+section h3 {
+    color: #764ba2;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+}
+
+footer {
+    background-color: #f8f9fa;
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    border-top: 1px solid #ddd;
+}
+
+/* ===========================
+   Game Status Section
+   =========================== */
+
+.game-status {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 5px solid #667eea;
+}
+
+.status-display {
+    font-size: 1.2em;
+    color: #333;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    border-left: 4px solid #28a745;
+}
+
+.current-round {
+    font-size: 1.1em;
+    color: #764ba2;
+    font-weight: bold;
+}
+
+/* ===========================
+   Players Section
+   =========================== */
+
+.players-section {
+    margin-bottom: 40px;
+}
+
+.players-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.player-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.player-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.player-name {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.player-status {
+    font-size: 0.95em;
+    opacity: 0.9;
+}
+
+/* ===========================
+   Score Section - Table
+   =========================== */
+
+.score-section {
+    background-color: #f8f9fa;
+    padding: 30px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+}
+
+.score-table-container {
+    margin-bottom: 40px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.score-table-container h3 {
+    margin-top: 0;
+}
+
+.score-table-wrapper {
+    overflow-x: auto;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.score-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+.score-table-header {
+    background-color: #667eea;
+    color: white;
+    font-weight: 600;
+}
+
+.score-table-header th {
+    padding: 12px 8px;
+    text-align: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.score-table-header th:last-child {
+    border-right: none;
+}
+
+.player-name-col {
+    text-align: left !important;
+    min-width: 120px;
+    border-right: 2px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.round-col {
+    min-width: 45px;
+    padding: 12px 4px !important;
+}
+
+.total-col {
+    min-width: 60px;
+    font-weight: 600;
+    background-color: #764ba2;
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.score-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.2s ease;
+}
+
+.score-table tbody tr:hover {
+    background-color: #f0f4ff;
+}
+
+.score-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.score-table tbody td {
+    padding: 12px 8px;
+    text-align: center;
+    border-right: 1px solid #e9ecef;
+}
+
+.score-table tbody td:first-child {
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-right: 2px solid #dee2e6;
+}
+
+.score-table tbody td:last-child {
+    border-right: none;
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* Score cell styling - positive/negative indicators */
+.score-cell {
+    position: relative;
+    padding: 12px 8px;
+}
+
+.score-cell.positive {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.score-cell.negative {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.score-cell.neutral {
+    color: #6c757d;
+}
+
+.score-cell.current-round {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+    border-radius: 4px;
+}
+
+.score-cell.current-round.positive {
+    background-color: #d4edda;
+    border-color: #28a745;
+}
+
+.score-cell.current-round.negative {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+}
+
+.total-cell {
+    font-weight: 700;
+    font-size: 1.05em;
+    background-color: #f0f0f0;
+    border-left: 2px solid #667eea;
+}
+
+.total-cell.positive {
+    color: #1e7e34;
+    background-color: #e8f5e9;
+}
+
+.total-cell.negative {
+    color: #c41c3b;
+    background-color: #ffebee;
+}
+
+/* ===========================
+   Score Section - Breakdown
+   =========================== */
+
+.score-breakdown-container {
+    margin-bottom: 40px;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.score-breakdown-container h3 {
+    margin-top: 0;
+}
+
+.score-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.breakdown-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 5px solid #667eea;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.breakdown-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.breakdown-player-name {
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.breakdown-player-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 0.95em;
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+    padding-top: 10px;
+    padding-bottom: 0;
+    margin-top: 10px;
+    border-top: 2px solid rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+}
+
+.breakdown-label {
+    color: #555;
+    font-weight: 500;
+}
+
+.breakdown-value {
+    font-weight: 700;
+    font-size: 1.05em;
+}
+
+.breakdown-value.positive {
+    color: #28a745;
+}
+
+.breakdown-value.negative {
+    color: #dc3545;
+}
+
+.breakdown-value.neutral {
+    color: #6c757d;
+}
+
+.breakdown-details {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.detail-value {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: #333;
+}
+
+/* ===========================
+   Score Section - Running Totals
+   =========================== */
+
+.running-totals-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.running-totals-container h3 {
+    margin-top: 0;
+}
+
+.running-totals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.total-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.total-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.total-card.positive {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.total-card.negative {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+}
+
+.total-card-player {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 10px;
+    opacity: 0.95;
+}
+
+.total-card-score {
+    font-size: 2em;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.total-card-rank {
+    font-size: 0.9em;
+    margin-top: 8px;
+    opacity: 0.85;
+}
+
+/* ===========================
+   Game Board Section
+   =========================== */
+
+.game-board {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    min-height: 300px;
+}
+
+.board-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 1.1em;
+}
+
+/* ===========================
+   Responsive Design
+   =========================== */
+
+@media (max-width: 1024px) {
+    .score-breakdown {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .score-table {
+        font-size: 0.85em;
+    }
+
+    .round-col {
+        min-width: 38px;
+        padding: 10px 3px !important;
+    }
+
+    .score-table-header th {
+        padding: 10px 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 20px 15px;
+    }
+
+    section h2 {
+        font-size: 1.5em;
+    }
+
+    section h3 {
+        font-size: 1.1em;
+    }
+
+    header h1 {
+        font-size: 2em;
+    }
+
+    .players-list {
+        grid-template-columns: 1fr;
+    }
+
+    .score-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .score-table {
+        font-size: 0.8em;
+        min-width: 600px;
+    }
+
+    .player-name-col {
+        min-width: 100px;
+    }
+
+    .round-col {
+        min-width: 35px;
+        padding: 8px 2px !important;
+    }
+
+    .score-table-header th {
+        padding: 8px 4px;
+    }
+
+    .score-table tbody td {
+        padding: 8px 4px;
+    }
+
+    .score-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .running-totals-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .total-card {
+        padding: 15px;
+    }
+
+    .total-card-score {
+        font-size: 1.6em;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        border-radius: 8px;
+    }
+
+    header {
+        padding: 30px 15px;
+    }
+
+    header h1 {
+        font-size: 1.6em;
+    }
+
+    .subtitle {
+        font-size: 0.95em;
+    }
+
+    main {
+        padding: 15px;
+    }
+
+    section {
+        margin-bottom: 25px;
+    }
+
+    section h2 {
+        font-size: 1.3em;
+        margin-bottom: 15px;
+    }
+
+    section h3 {
+        font-size: 1em;
+    }
+
+    .score-section {
+        padding: 15px;
+    }
+
+    .score-table-container,
+    .score-breakdown-container,
+    .running-totals-container {
+        padding: 15px;
+        margin-bottom: 25px;
+    }
+
+    .score-table {
+        font-size: 0.75em;
+        min-width: 550px;
+    }
+
+    .player-name-col {
+        min-width: 80px;
+    }
+
+    .round-col {
+        min-width: 32px;
+        padding: 6px 1px !important;
+    }
+
+    .score-table-header th {
+        padding: 6px 3px;
+    }
+
+    .score-table tbody td {
+        padding: 6px 3px;
+    }
+
+    .breakdown-card {
+        padding: 15px;
+    }
+
+    .breakdown-item {
+        padding: 8px 0;
+        font-size: 0.9em;
+    }
+
+    .breakdown-details {
+        font-size: 0.8em;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .running-totals-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .total-card {
+        padding: 12px;
+    }
+
+    .total-card-player {
+        font-size: 1em;
+    }
+
+    .total-card-score {
+        font-size: 1.4em;
+    }
+}
+
+/* ===========================
+   Animation & Transitions
+   =========================== */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.score-table-container,
+.score-breakdown-container,
+.running-totals-container {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* ===========================
+   Print Styles
+   =========================== */
+
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+
+    .container {
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .player-card,
+    .breakdown-card,
+    .total-card {
+        break-inside: avoid;
+    }
+
+    .score-table tbody tr:hover {
+        background-color: white;
+    }
+}

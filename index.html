@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skull King - Card Game</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Skull King</h1>
+            <p class="subtitle">The Ultimate Bluffing Card Game</p>
+        </header>
+
+        <main>
+            <!-- Game Status Section -->
+            <section class="game-status">
+                <h2>Game Status</h2>
+                <div id="gameStatus" class="status-display">Ready to start</div>
+                <div id="currentRound" class="current-round">Round: 1</div>
+            </section>
+
+            <!-- Players Section -->
+            <section class="players-section">
+                <h2>Players</h2>
+                <div id="playersList" class="players-list">
+                    <!-- Player cards will be populated here -->
+                </div>
+            </section>
+
+            <!-- Score Display Section -->
+            <section class="score-section">
+                <h2>Scores</h2>
+                
+                <!-- Round-by-Round Score Table -->
+                <div class="score-table-container">
+                    <h3>Round-by-Round Scores</h3>
+                    <div class="score-table-wrapper">
+                        <table class="score-table">
+                            <thead>
+                                <tr class="score-table-header">
+                                    <th class="player-name-col">Player</th>
+                                    <th class="round-col round-1">R1</th>
+                                    <th class="round-col round-2">R2</th>
+                                    <th class="round-col round-3">R3</th>
+                                    <th class="round-col round-4">R4</th>
+                                    <th class="round-col round-5">R5</th>
+                                    <th class="round-col round-6">R6</th>
+                                    <th class="round-col round-7">R7</th>
+                                    <th class="round-col round-8">R8</th>
+                                    <th class="round-col round-9">R9</th>
+                                    <th class="round-col round-10">R10</th>
+                                    <th class="total-col">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoreTableBody">
+                                <!-- Score rows will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Current Round Score Breakdown -->
+                <div class="score-breakdown-container">
+                    <h3>Current Round Breakdown</h3>
+                    <div id="scoreBreakdown" class="score-breakdown">
+                        <!-- Breakdown details will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Running Totals Summary -->
+                <div class="running-totals-container">
+                    <h3>Running Totals</h3>
+                    <div id="runningTotals" class="running-totals-grid">
+                        <!-- Running totals will be populated here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Game Board Section -->
+            <section class="game-board">
+                <h2>Game Board</h2>
+                <div id="gameBoard" class="board-display">
+                    <!-- Game board content will go here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Skull King Card Game. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="js/scoring.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
