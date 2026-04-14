@@ -1,0 +1,298 @@
+:root {
+  --primary-color: #2c3e50;
+  --secondary-color: #3498db;
+  --accent-color: #e74c3c;
+  --success-color: #27ae60;
+  --light-bg: #ecf0f1;
+  --border-color: #bdc3c7;
+  --transition-duration: 0.3s;
+}
+
+/* Score Display Container */
+.score-display-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--primary-color);
+}
+
+/* Current Scores Section */
+.current-scores-section {
+  margin-bottom: 40px;
+}
+
+.current-scores-section h2 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: var(--primary-color);
+  border-bottom: 3px solid var(--secondary-color);
+  padding-bottom: 10px;
+}
+
+.leaderboard {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--light-bg);
+  transition: background-color var(--transition-duration) ease;
+}
+
+.leaderboard-item:last-child {
+  border-bottom: none;
+}
+
+.leaderboard-item:hover {
+  background-color: var(--light-bg);
+}
+
+.leaderboard-item.leader {
+  background-color: #fff9e6;
+  border-left: 4px solid var(--success-color);
+  padding-left: 11px;
+  font-weight: bold;
+}
+
+.player-name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.player-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--secondary-color);
+}
+
+/* Score History Section */
+.history-section {
+  margin-top: 40px;
+}
+
+.history-section h2 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: var(--primary-color);
+  border-bottom: 3px solid var(--secondary-color);
+  padding-bottom: 10px;
+}
+
+.player-histories {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Accordion Styles */
+.accordion-item {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow var(--transition-duration) ease;
+}
+
+.accordion-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.accordion-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background var(--transition-duration) ease;
+}
+
+.accordion-header:hover {
+  background: linear-gradient(135deg, #1a252f, #2980b9);
+}
+
+.accordion-header.expanded {
+  background: linear-gradient(135deg, #1a252f, #2980b9);
+}
+
+.accordion-player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.accordion-player-name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.accordion-player-total {
+  font-size: 16px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.accordion-toggle-icon {
+  font-size: 24px;
+  transition: transform var(--transition-duration) ease;
+  transform: rotate(0deg);
+}
+
+.accordion-item.expanded .accordion-toggle-icon {
+  transform: rotate(180deg);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--transition-duration) ease,
+              padding var(--transition-duration) ease;
+  background: var(--light-bg);
+}
+
+.accordion-item.expanded .accordion-content {
+  max-height: 1000px; /* Adjust if needed for very long content */
+  padding: 20px;
+}
+
+/* Score Breakdown Table */
+.score-breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.score-breakdown-table th {
+  background: var(--primary-color);
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+}
+
+.score-breakdown-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  text-align: left;
+}
+
+.score-breakdown-table tbody tr:nth-child(even) {
+  background: white;
+}
+
+.score-breakdown-table tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+
+.score-breakdown-table tbody tr:hover {
+  background: #fffbea;
+}
+
+.round-number {
+  font-weight: 600;
+  color: var(--secondary-color);
+}
+
+.round-score {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.running-total {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* Summary Row */
+.breakdown-summary {
+  background: #f0f0f0;
+  padding: 12px;
+  border-radius: 4px;
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.breakdown-summary-label {
+  color: var(--primary-color);
+}
+
+.breakdown-summary-value {
+  color: var(--accent-color);
+  font-size: 18px;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .score-display-container {
+    padding: 15px;
+  }
+
+  .current-scores-section h2,
+  .history-section h2 {
+    font-size: 20px;
+  }
+
+  .accordion-header {
+    padding: 12px;
+  }
+
+  .accordion-player-name {
+    font-size: 16px;
+  }
+
+  .accordion-player-total {
+    font-size: 14px;
+  }
+
+  .score-breakdown-table th,
+  .score-breakdown-table td {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  .player-histories {
+    gap: 8px;
+  }
+}
+
+/* Animation for smooth expand/collapse */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.accordion-content {
+  animation: slideDown var(--transition-duration) ease;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 30px 20px;
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+}
