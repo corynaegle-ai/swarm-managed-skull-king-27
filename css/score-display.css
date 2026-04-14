@@ -150,6 +150,7 @@
   font-size: 24px;
   transition: transform var(--transition-duration) ease;
   transform: rotate(0deg);
+  margin-left: 16px;
 }
 
 .accordion-item.expanded .accordion-toggle-icon {
@@ -160,13 +161,16 @@
   max-height: 0;
   overflow: hidden;
   transition: max-height var(--transition-duration) ease,
-              padding var(--transition-duration) ease;
+              padding var(--transition-duration) ease,
+              opacity var(--transition-duration) ease;
   background: var(--light-bg);
+  opacity: 0;
 }
 
 .accordion-item.expanded .accordion-content {
-  max-height: 1000px; /* Adjust if needed for very long content */
+  max-height: 1000px;
   padding: 20px;
+  opacity: 1;
 }
 
 /* Score Breakdown Table */
