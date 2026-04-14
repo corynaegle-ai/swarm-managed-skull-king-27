@@ -1,48 +1,62 @@
 /**
  * Game State Management Module
- * Manages core game state including rounds (1-10), phases, and game completion
+ * Manages core game state including rounds, phases, and player scores
  */
 
-// Initialize the game state object
 const gameState = {
-  currentRound: 0,
+  currentRound: 1,
   phase: 'setup', // 'setup', 'bidding', 'scoring', 'complete'
   players: [],
   isComplete: false
 };
 
 /**
- * Initialize the game to starting state
- * Resets round to 1, phase to 'setup', clears players array, and marks game as not complete
+ * Initialize the game state
+ * Resets to round 1, setup phase, and clears all player scores
+ * @param {Array} playerList - Array of player objects with at least id property
  */
-function initializeGame() {
+function initializeGame(playerList = []) {
   gameState.currentRound = 1;
   gameState.phase = 'setup';
-  gameState.players = [];
   gameState.isComplete = false;
+  
+  // Initialize players with score tracking
+  gameState.players = playerList.map(player => ({
+    id: player.id,
+    name: player.name || `Player ${player.id}`,
+    score: 0,
+    roundScores: []
+  }));
 }
 
 /**
- * Get the current round number (1-10)
- * @returns {number} Current round number
+ * Get the current round number
+ * @returns {number} Current round (1-10)
  */
 function getCurrentRound() {
   return gameState.currentRound;
 }
 
 /**
- * Set the game phase
- * @param {string} newPhase - The phase to set: 'setup', 'bidding', 'scoring', or 'complete'
+ * Set the current game phase
+ * @param {string} newPhase - Phase to set ('setup', 'bidding', 'scoring', 'complete')
+ * @returns {boolean} True if phase was set successfully
  */
 function setGamePhase(newPhase) {
-  if (['setup', 'bidding', 'scoring', 'complete'].includes(newPhase)) {
-    gameState.phase = newPhase;
+  const validPhases = ['setup', 'bidding', 'scoring', 'complete'];
+  
+  if (!validPhases.includes(newPhase)) {
+    console.error(`Invalid phase: ${newPhase}. Must be one of: ${validPhases.join(', ')}`);
+    return false;
   }
+  
+  gameState.phase = newPhase;
+  return true;
 }
 
 /**
  * Get the current game phase
- * @returns {string} Current phase: 'setup', 'bidding', 'scoring', or 'complete'
+ * @returns {string} Current phase ('setup', 'bidding', 'scoring', 'complete')
  */
 function getGamePhase() {
   return gameState.phase;
@@ -50,49 +64,82 @@ function getGamePhase() {
 
 /**
  * Advance to the next round
- * Increments currentRound. Marks game complete only when attempting to advance past round 10.
- * This allows round 10 to be fully playable with its own phases.
+ * Automatically sets phase to 'setup' and handles game completion at round 10
+ * @returns {boolean} True if round was advanced, false if game is complete
  */
 function advanceRound() {
-  if (gameState.currentRound < 10) {
-    gameState.currentRound += 1;
-    // Transition to bidding phase for the new round
-    gameState.phase = 'bidding';
-  } else if (gameState.currentRound === 10) {
-    // Attempting to advance past round 10 - mark game complete
+  if (gameState.isComplete) {
+    console.warn('Game is already complete. Cannot advance round.');
+    return false;
+  }
+  
+  gameState.currentRound += 1;
+  gameState.phase = 'setup';
+  
+  // Check if game is complete (after round 10)
+  if (gameState.currentRound > 10) {
     gameState.isComplete = true;
     gameState.phase = 'complete';
+    return false;
   }
-  // If currentRound > 10, do nothing (already complete)
+  
+  return true;
 }
 
 /**
  * Check if the game is complete
- * @returns {boolean} True if game is complete, false otherwise
+ * @returns {boolean} True if game has completed all 10 rounds
  */
 function isGameComplete() {
   return gameState.isComplete;
 }
 
 /**
- * Get a deep copy of the current game state
- * Uses structuredClone to ensure nested objects (players) are fully cloned
- * preventing external mutations from corrupting internal state
- * @returns {object} Deep copy of gameState with properties: currentRound, phase, players array, isComplete
+ * Get the complete game state
+ * @returns {Object} Current game state object
  */
 function getGameState() {
-  // Use structuredClone for deep copying of nested objects
-  return structuredClone({
+  return {
     currentRound: gameState.currentRound,
     phase: gameState.phase,
     players: gameState.players,
     isComplete: gameState.isComplete
-  });
+  };
 }
 
-// Export for ES modules and browser environments
+/**
+ * Update a player's score (helper function)
+ * @param {string|number} playerId - ID of the player
+ * @param {number} score - Score to add for this round
+ * @returns {boolean} True if score was updated
+ */
+function updatePlayerScore(playerId, score) {
+  const player = gameState.players.find(p => p.id === playerId);
+  
+  if (!player) {
+    console.error(`Player with id ${playerId} not found`);
+    return false;
+  }
+  
+  player.roundScores[gameState.currentRound - 1] = score;
+  player.score += score;
+  return true;
+}
+
+/**
+ * Get player scores
+ * @returns {Array} Array of player score objects
+ */
+function getPlayerScores() {
+  return gameState.players.map(player => ({
+    id: player.id,
+    name: player.name,
+    score: player.score
+  }));
+}
+
+// Export functions using module pattern
 if (typeof module !== 'undefined' && module.exports) {
-  // Node.js / CommonJS
   module.exports = {
     initializeGame,
     getCurrentRound,
@@ -100,30 +147,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getGamePhase,
     advanceRound,
     isGameComplete,
-    getGameState
-  };
-}
-
-// Also export as ES modules
-if (typeof exports !== 'undefined') {
-  exports.initializeGame = initializeGame;
-  exports.getCurrentRound = getCurrentRound;
-  exports.setGamePhase = setGamePhase;
-  exports.getGamePhase = getGamePhase;
-  exports.advanceRound = advanceRound;
-  exports.isGameComplete = isGameComplete;
-  exports.getGameState = getGameState;
-}
-
-// Export to window for browser environment
-if (typeof window !== 'undefined') {
-  window.GameState = {
-    initializeGame,
-    getCurrentRound,
-    setGamePhase,
-    getGamePhase,
-    advanceRound,
-    isGameComplete,
-    getGameState
+    getGameState,
+    updatePlayerScore,
+    getPlayerScores
   };
 }
