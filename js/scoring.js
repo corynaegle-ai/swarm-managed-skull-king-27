@@ -1,64 +1,68 @@
 /**
- * Scoring module for Skull King card game
- * Implements scoring rules for both zero and non-zero bids
+ * Core scoring calculation module for Skull King game
+ * Implements Skull King scoring rules for round and total score calculations
  */
 
 /**
- * Calculates the score for a single round
+ * Calculates the score for a single round based on Skull King rules
  * 
- * Scoring rules:
- * - Non-zero bid: +20 per trick if exact match, -10 per difference if not
- * - Zero bid: +10×handNumber if exact (0 tricks), -10×handNumber if any tricks taken
+ * Rules:
+ * - Non-zero bid: +20 points per trick if exact bid matched, -10 points per difference if not
+ * - Zero bid: +10×handNumber if exact (no tricks), -10×handNumber if any tricks taken
  * 
- * @param {number} bid - The number of tricks bid (0 or positive integer)
- * @param {number} tricksWon - The actual number of tricks won (0 or positive integer)
- * @param {number} handNumber - The hand/round number (1-13 for Skull King)
+ * @param {number} bid - The number of tricks bid (0 or greater)
+ * @param {number} tricksWon - The number of tricks actually won
+ * @param {number} handNumber - The current hand/round number (1 or greater, used for zero bid scoring)
  * @returns {number} The score for this round
- * @throws {Error} If parameters are invalid
+ * @throws {Error} If inputs are invalid (negative numbers, non-integers, etc.)
  */
 function calculateRoundScore(bid, tricksWon, handNumber) {
   // Input validation
-  if (typeof bid !== 'number' || bid < 0 || !Number.isInteger(bid)) {
-    throw new Error(`Invalid bid: must be a non-negative integer, received ${bid}`);
+  if (typeof bid !== 'number' || typeof tricksWon !== 'number' || typeof handNumber !== 'number') {
+    throw new Error('All parameters must be numbers');
   }
   
-  if (typeof tricksWon !== 'number' || tricksWon < 0 || !Number.isInteger(tricksWon)) {
-    throw new Error(`Invalid tricksWon: must be a non-negative integer, received ${tricksWon}`);
+  if (!Number.isInteger(bid) || !Number.isInteger(tricksWon) || !Number.isInteger(handNumber)) {
+    throw new Error('All parameters must be integers');
   }
   
-  if (typeof handNumber !== 'number' || handNumber <= 0 || !Number.isInteger(handNumber)) {
-    throw new Error(`Invalid handNumber: must be a positive integer, received ${handNumber}`);
+  if (bid < 0 || tricksWon < 0 || handNumber < 1) {
+    throw new Error('Bid and tricksWon must be non-negative, handNumber must be at least 1');
   }
   
-  // Zero bid scoring: +10×handNumber if exact (0 tricks), -10×handNumber if any tricks
-  if (bid === 0) {
-    if (tricksWon === 0) {
-      return 10 * handNumber;
+  // Non-zero bid scoring
+  if (bid !== 0) {
+    if (bid === tricksWon) {
+      // Exact bid: +20 per trick
+      return 20 * bid;
     } else {
-      return -10 * handNumber;
+      // Missed/extra tricks: -10 per difference
+      const difference = Math.abs(bid - tricksWon);
+      return -10 * difference;
     }
   }
   
-  // Non-zero bid scoring: +20 per trick if exact, -10 per difference if not
-  if (bid === tricksWon) {
-    return 20 * bid;
+  // Zero bid scoring
+  if (tricksWon === 0) {
+    // Exact zero bid (no tricks taken): +10×handNumber
+    return 10 * handNumber;
   } else {
-    const difference = Math.abs(bid - tricksWon);
-    return -10 * difference;
+    // Failed zero bid (tricks taken): -10×handNumber
+    return -10 * handNumber;
   }
 }
 
 /**
- * Calculates the total score across all rounds
+ * Calculates the total score by summing all round scores
  * 
- * @param {Array<number>} playerScores - Array of round scores for a player
- * @returns {number} The sum of all round scores
- * @throws {Error} If playerScores is not a valid array of numbers
+ * @param {number[]} playerScores - Array of scores from each round
+ * @returns {number} The total score (sum of all rounds)
+ * @throws {Error} If input is not an array or contains non-numbers
  */
 function calculateTotalScore(playerScores) {
   // Input validation
   if (!Array.isArray(playerScores)) {
-    throw new Error(`Invalid playerScores: must be an array, received ${typeof playerScores}`);
+    throw new Error('Input must be an array of scores');
   }
   
   if (playerScores.length === 0) {
@@ -66,10 +70,8 @@ function calculateTotalScore(playerScores) {
   }
   
   // Validate all elements are numbers
-  for (let i = 0; i < playerScores.length; i++) {
-    if (typeof playerScores[i] !== 'number') {
-      throw new Error(`Invalid score at index ${i}: must be a number, received ${typeof playerScores[i]}`);
-    }
+  if (!playerScores.every(score => typeof score === 'number')) {
+    throw new Error('All scores must be numbers');
   }
   
   // Sum all scores
