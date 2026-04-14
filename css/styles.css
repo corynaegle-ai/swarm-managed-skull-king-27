@@ -504,6 +504,7 @@ body {
   border-radius: 8px;
   margin-bottom: 20px;
   border-left: 5px solid #667eea;
+  display: none;
 }
 
 .game-info-section h2 {
@@ -534,6 +535,7 @@ body {
   border-radius: 8px;
   margin-bottom: 20px;
   border: 2px solid #e0e0e0;
+  display: none;
 }
 
 .player-scores-section h2 {

@@ -1,244 +1,262 @@
-// ============================= 
-// Player Setup & Management
-// ============================= 
+import { addPlayer, removePlayer, getPlayers, isValidPlayerName } from './playerManager.js';
 
-import { addPlayer, removePlayer, getPlayers, resetPlayers } from './playerManager.js';
+const MAX_PLAYERS = 8;
+const MIN_PLAYERS = 2;
 
-// DOM Elements
 const playerNameInput = document.querySelector('#player-name-input');
 const addPlayerBtn = document.querySelector('#add-player-btn');
 const playerListContainer = document.querySelector('#player-list-container');
 const startGameBtn = document.querySelector('#start-game-btn');
+const playerSetupSection = document.querySelector('.player-setup-section');
+const gameInfoSection = document.querySelector('.game-info-section');
+const playerScoresSection = document.querySelector('.player-scores-section');
+const playerScoresTable = document.querySelector('#player-scores-table tbody');
+const bidPhaseContainer = document.querySelector('#bid-phase-container');
+const errorMessage = document.querySelector('#error-message');
 const playerSetupForm = document.querySelector('#player-setup-form');
-const errorMessageDisplay = document.querySelector('#error-message');
-
-// Constants
-const MAX_PLAYERS = 8;
-const MIN_PLAYERS = 2;
-const MAX_PLAYER_NAME_LENGTH = 20;
 
 /**
- * Display error message to user
- */
-function showError(message) {
-  if (errorMessageDisplay) {
-    errorMessageDisplay.textContent = message;
-    errorMessageDisplay.classList.add('visible');
-    setTimeout(() => {
-      errorMessageDisplay.classList.remove('visible');
-    }, 4000);
-  }
-}
-
-/**
- * Clear error message
+ * Clears error message display
  */
 function clearError() {
-  if (errorMessageDisplay) {
-    errorMessageDisplay.textContent = '';
-    errorMessageDisplay.classList.remove('visible');
+  if (errorMessage) {
+    errorMessage.textContent = '';
+    errorMessage.classList.remove('visible');
   }
 }
 
 /**
- * Validate player name input
+ * Displays error message
  */
-function validatePlayerName(name) {
-  const trimmedName = name.trim();
-  
-  // Check if empty
-  if (!trimmedName) {
-    return { valid: false, error: 'Player name cannot be empty.' };
+function showError(message) {
+  if (errorMessage) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('visible');
   }
-  
-  // Check if too long
-  if (trimmedName.length > MAX_PLAYER_NAME_LENGTH) {
-    return { valid: false, error: `Player name cannot exceed ${MAX_PLAYER_NAME_LENGTH} characters.` };
-  }
-  
-  // Check for duplicates
-  const existingPlayers = getPlayers();
-  const isDuplicate = existingPlayers.some(p => p.name.toLowerCase() === trimmedName.toLowerCase());
-  if (isDuplicate) {
-    return { valid: false, error: 'A player with this name already exists.' };
-  }
-  
-  return { valid: true, error: null };
 }
 
 /**
- * Render the player list display
+ * Updates the disabled state of buttons based on current player count
+ */
+function updateButtonStates() {
+  const players = getPlayers();
+  const playerCount = players.length;
+
+  // Add Player button: disable if at max players
+  if (addPlayerBtn) {
+    addPlayerBtn.disabled = playerCount >= MAX_PLAYERS;
+  }
+
+  // Input field: disable if at max players
+  if (playerNameInput) {
+    playerNameInput.disabled = playerCount >= MAX_PLAYERS;
+  }
+
+  // Start Game button: disable if fewer than MIN_PLAYERS
+  if (startGameBtn) {
+    startGameBtn.disabled = playerCount < MIN_PLAYERS;
+  }
+}
+
+/**
+ * Renders the player list with remove buttons
  */
 function renderPlayerList() {
   const players = getPlayers();
-  
-  if (!playerListContainer) return;
-  
-  // Clear existing list
+
+  // Clear existing content
   playerListContainer.innerHTML = '';
-  
+
   if (players.length === 0) {
-    playerListContainer.innerHTML = '<p class="no-players-message">No players added yet. Add at least 2 players to start the game.</p>';
-    return;
-  }
-  
-  // Create list
-  const playersList = document.createElement('ul');
-  playersList.classList.add('player-list');
-  
-  players.forEach((player, index) => {
-    const playerItem = document.createElement('li');
-    playerItem.classList.add('player-list-item');
-    
-    const playerNameSpan = document.createElement('span');
-    playerNameSpan.classList.add('player-name');
-    playerNameSpan.textContent = player.name;
-    
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.classList.add('remove-player-btn');
-    removeBtn.textContent = '×';
-    removeBtn.setAttribute('aria-label', `Remove player ${player.name}`);
-    removeBtn.setAttribute('data-player-index', index);
-    
-    removeBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      removePlayerHandler(index);
+    const noPlayersMsg = document.createElement('div');
+    noPlayersMsg.className = 'no-players-message';
+    noPlayersMsg.textContent = 'No players added yet';
+    playerListContainer.appendChild(noPlayersMsg);
+  } else {
+    const playerList = document.createElement('ul');
+    playerList.className = 'player-list';
+
+    players.forEach((player, index) => {
+      const listItem = document.createElement('li');
+      listItem.className = 'player-list-item';
+
+      const playerNameSpan = document.createElement('span');
+      playerNameSpan.className = 'player-name';
+      playerNameSpan.textContent = player.name;
+
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'remove-player-btn';
+      removeButton.textContent = '×';
+      removeButton.setAttribute('aria-label', `Remove ${player.name}`);
+      removeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleRemovePlayer(index);
+      });
+
+      listItem.appendChild(playerNameSpan);
+      listItem.appendChild(removeButton);
+      playerList.appendChild(listItem);
     });
-    
-    playerItem.appendChild(playerNameSpan);
-    playerItem.appendChild(removeBtn);
-    playersList.appendChild(playerItem);
-  });
-  
-  playerListContainer.appendChild(playersList);
+
+    playerListContainer.appendChild(playerList);
+  }
+
+  // Render player count info
+  renderPlayerCountInfo();
+
+  // Update button states
+  updateButtonStates();
 }
 
 /**
- * Handle add player form submission
+ * Renders the player count information message
+ */
+function renderPlayerCountInfo() {
+  const players = getPlayers();
+  const playerCount = players.length;
+
+  // Remove any existing player-count-info element
+  const existingCountInfo = playerListContainer.querySelector('.player-count-info');
+  if (existingCountInfo) {
+    existingCountInfo.remove();
+  }
+
+  // Create and add new player count info
+  const countInfo = document.createElement('div');
+  countInfo.className = 'player-count-info';
+
+  if (playerCount >= MIN_PLAYERS) {
+    countInfo.classList.add('ready');
+    countInfo.textContent = `${playerCount} player${playerCount !== 1 ? 's' : ''} ready to start`;
+  } else {
+    const needed = MIN_PLAYERS - playerCount;
+    countInfo.textContent = `Add ${needed} more player${needed !== 1 ? 's' : ''} to start`;
+  }
+
+  playerListContainer.appendChild(countInfo);
+}
+
+/**
+ * Handles adding a new player
  */
 function handleAddPlayer(e) {
   e.preventDefault();
-  
-  if (!playerNameInput) return;
-  
-  const playerName = playerNameInput.value;
-  const validation = validatePlayerName(playerName);
-  
-  if (!validation.valid) {
-    showError(validation.error);
+  clearError();
+
+  const playerName = playerNameInput.value.trim();
+
+  if (!isValidPlayerName(playerName)) {
+    showError('Player name is required');
+    playerNameInput.focus();
     return;
   }
-  
-  // Add player
-  addPlayer(playerName);
-  clearError();
-  
-  // Clear input
-  playerNameInput.value = '';
-  playerNameInput.focus();
-  
-  // Update displays
-  renderPlayerList();
-  updateButtonStates();
+
+  try {
+    addPlayer(playerName);
+    playerNameInput.value = '';
+    playerNameInput.focus();
+    renderPlayerList();
+  } catch (error) {
+    showError(error.message);
+    playerNameInput.focus();
+  }
 }
 
 /**
- * Handle remove player
+ * Handles removing a player
  */
-function removePlayerHandler(index) {
+function handleRemovePlayer(index) {
   removePlayer(index);
-  renderPlayerList();
-  updateButtonStates();
   clearError();
+  renderPlayerList();
 }
 
 /**
- * Update button states based on current player count
- */
-function updateButtonStates() {
-  const playerCount = getPlayers().length;
-  const isMaxPlayers = playerCount >= MAX_PLAYERS;
-  const isMinPlayers = playerCount >= MIN_PLAYERS;
-  
-  // Update Add Player button
-  if (addPlayerBtn) {
-    addPlayerBtn.disabled = isMaxPlayers;
-    if (isMaxPlayers) {
-      addPlayerBtn.setAttribute('title', `Maximum ${MAX_PLAYERS} players reached`);
-    } else {
-      addPlayerBtn.removeAttribute('title');
-    }
-  }
-  
-  // Update Start Game button
-  if (startGameBtn) {
-    startGameBtn.disabled = !isMinPlayers;
-    if (!isMinPlayers) {
-      startGameBtn.setAttribute('title', `Add at least ${MIN_PLAYERS} players to start`);
-    } else {
-      startGameBtn.removeAttribute('title');
-    }
-  }
-}
-
-/**
- * Handle Start Game button click
+ * Handles game start - transitions from setup to game phase
  */
 function handleStartGame(e) {
   e.preventDefault();
-  
+
   const players = getPlayers();
-  
+
   if (players.length < MIN_PLAYERS) {
-    showError(`Add at least ${MIN_PLAYERS} players to start the game.`);
+    showError(`Need at least ${MIN_PLAYERS} players to start`);
     return;
   }
-  
-  // TODO: Transition to game phase
-  console.log('Game starting with players:', players);
-  alert(`Starting game with ${players.length} players: ${players.map(p => p.name).join(', ')}`);
+
+  // Hide player setup section
+  if (playerSetupSection) {
+    playerSetupSection.style.display = 'none';
+  }
+
+  // Show game info section if it was hidden
+  if (gameInfoSection) {
+    gameInfoSection.style.display = 'block';
+  }
+
+  // Show player scores section
+  if (playerScoresSection) {
+    playerScoresSection.style.display = 'block';
+  }
+
+  // Populate initial scores table
+  renderScoresTable();
+
+  // Show bid phase container for gameplay
+  if (bidPhaseContainer) {
+    bidPhaseContainer.style.display = 'block';
+  }
+
+  clearError();
 }
 
 /**
- * Initialize the app
+ * Renders the scores table with all players
  */
-function init() {
-  // Reset players on page load
-  resetPlayers();
-  renderPlayerList();
-  updateButtonStates();
-  
-  // Attach event listeners
+function renderScoresTable() {
+  const players = getPlayers();
+
+  // Clear existing rows
+  playerScoresTable.innerHTML = '';
+
+  // Add a row for each player
+  players.forEach((player) => {
+    const row = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    nameCell.textContent = player.name;
+
+    const scoreCell = document.createElement('td');
+    scoreCell.textContent = player.score || 0;
+
+    row.appendChild(nameCell);
+    row.appendChild(scoreCell);
+    playerScoresTable.appendChild(row);
+  });
+}
+
+/**
+ * Initializes the app
+ */
+function initializeApp() {
+  // Attach form submit listener
   if (playerSetupForm) {
     playerSetupForm.addEventListener('submit', handleAddPlayer);
   }
-  
-  if (addPlayerBtn) {
-    addPlayerBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      handleAddPlayer({ preventDefault: () => {} });
-    });
-  }
-  
+
+  // Attach start game button listener
   if (startGameBtn) {
     startGameBtn.addEventListener('click', handleStartGame);
   }
-  
-  // Allow Enter key in input to add player
-  if (playerNameInput) {
-    playerNameInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleAddPlayer({ preventDefault: () => {} });
-      }
-    });
-  }
+
+  // Initial render
+  renderPlayerList();
 }
 
-// Start the application when DOM is ready
+// Initialize the app when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-  init();
+  initializeApp();
 }
