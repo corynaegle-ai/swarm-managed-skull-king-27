@@ -1,4 +1,202 @@
 /**
+ * Score Display Module
+ * Handles rendering and updating player scores with leader highlighting
+ */
+
+class ScoreDisplay {
+  constructor(containerId = 'scores-container') {
+    this.container = document.getElementById(containerId);
+    this.players = [];
+    this.updateListeners = [];
+  }
+
+  /**
+   * Initialize with player data
+   * @param {Array} players - Array of player objects with { name, score } properties
+   */
+  init(players) {
+    this.players = players;
+    this.render();
+  }
+
+  /**
+   * Update a player's score and trigger real-time update
+   * @param {string|number} playerId - The player identifier
+   * @param {number} newScore - The new score value
+   */
+  updatePlayerScore(playerId, newScore) {
+    const player = this.players.find(p => p.id === playerId || p.name === playerId);
+    if (player) {
+      player.score = newScore;
+      this.render();
+      this.triggerScoreUpdateAnimation(playerId);
+      this.notifyListeners();
+    }
+  }
+
+  /**
+   * Get the current leader
+   * @returns {Object} Player object with highest score
+   */
+  getCurrentLeader() {
+    if (this.players.length === 0) return null;
+    return this.players.reduce((leader, current) => 
+      current.score > leader.score ? current : leader
+    );
+  }
+
+  /**
+   * Get sorted players by score (descending)
+   * @returns {Array} Sorted array of players
+   */
+  getSortedPlayers() {
+    return [...this.players].sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Render all player score cards
+   */
+  render() {
+    if (!this.container) {
+      console.error('Score container not found');
+      return;
+    }
+
+    const sortedPlayers = this.getSortedPlayers();
+    const leader = this.getCurrentLeader();
+
+    this.container.innerHTML = sortedPlayers.map((player, index) => 
+      this.createPlayerCard(player, index + 1, leader)
+    ).join('');
+
+    // Attach event listeners to cards
+    this.attachCardListeners();
+  }
+
+  /**
+   * Create HTML for a player score card
+   * @param {Object} player - Player object
+   * @param {number} rank - Player's rank position
+   * @param {Object} leader - Current leader object
+   * @returns {string} HTML string for the card
+   */
+  createPlayerCard(player, rank, leader) {
+    const isLeader = leader && player.id === leader.id;
+    const leaderClass = isLeader ? 'leader' : '';
+    const leaderBadge = isLeader ? '<span class="leader-badge">👑 Leader</span>' : '';
+
+    return `
+      <div class="player-score-card ${leaderClass}" data-player-id="${player.id || player.name}">
+        <div class="card-rank">${rank}</div>
+        <div class="card-content">
+          <div class="card-header">
+            <h2 class="player-name">${this.escapeHtml(player.name)}</h2>
+            ${leaderBadge}
+          </div>
+          <div class="card-score">${player.score}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Trigger visual animation for score update
+   * @param {string|number} playerId - The player identifier
+   */
+  triggerScoreUpdateAnimation(playerId) {
+    const card = this.container.querySelector(`[data-player-id="${playerId}"]`);
+    if (card) {
+      card.classList.add('updating');
+      setTimeout(() => {
+        card.classList.remove('updating');
+      }, 300);
+    }
+  }
+
+  /**
+   * Attach event listeners to player cards
+   */
+  attachCardListeners() {
+    const cards = this.container.querySelectorAll('.player-score-card');
+    cards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        this.handleCardClick(e);
+      });
+    });
+  }
+
+  /**
+   * Handle click events on player cards
+   * @param {Event} event - Click event
+   */
+  handleCardClick(event) {
+    const card = event.currentTarget;
+    const playerId = card.getAttribute('data-player-id');
+    this.notifyListeners({ type: 'cardClick', playerId });
+  }
+
+  /**
+   * Register a listener for score updates
+   * @param {Function} callback - Function to call on updates
+   */
+  onUpdate(callback) {
+    this.updateListeners.push(callback);
+  }
+
+  /**
+   * Notify all registered listeners
+   * @param {Object} data - Data to pass to listeners
+   */
+  notifyListeners(data = {}) {
+    this.updateListeners.forEach(callback => {
+      try {
+        callback({
+          players: this.players,
+          leader: this.getCurrentLeader(),
+          ...data
+        });
+      } catch (error) {
+        console.error('Error in score update listener:', error);
+      }
+    });
+  }
+
+  /**
+   * Escape HTML special characters
+   * @param {string} text - Text to escape
+   * @returns {string} Escaped text
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * Get current scores
+   * @returns {Array} Current players array
+   */
+  getScores() {
+    return this.players;
+  }
+
+  /**
+   * Reset all scores to zero
+   */
+  resetScores() {
+    this.players.forEach(player => {
+      player.score = 0;
+    });
+    this.render();
+    this.notifyListeners({ type: 'reset' });
+  }
+}
+
+// Export for use in modules
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ScoreDisplay;
+}
+/**
  * Score Display Component
  * Handles rendering and updating of player scores in real-time
  */
