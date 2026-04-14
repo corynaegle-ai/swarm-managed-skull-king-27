@@ -14,15 +14,10 @@ A multiplayer trick-taking card game implementation built with React and TypeScr
 ```
 src/
 ├── components/
-│   ├── ScoreDisplay.tsx      # Score display component
 │   ├── GameFlow.tsx          # Game flow management
 │   ├── BiddingPhase.tsx      # Bidding phase UI
 │   ├── PlayPhase.tsx         # Play phase UI
 │   └── ...
-├── types/
-│   └── index.ts              # TypeScript type definitions
-├── styles/
-│   └── index.css             # Global styles
 └── App.tsx
 ```
 
@@ -41,9 +36,4 @@ npm test
 
 ## Score Display
 
-The Score Display component shows:
-- Current total scores for all players
-- Score breakdown by round
-- Final rankings at game end
-- Clear indication of the current leader
-- Responsive design for all device sizes
+See `README_SCORE_DISPLAY.md` for detailed documentation on the Score Display feature, including component specifications, data types, responsive design requirements, and styling guidelines.

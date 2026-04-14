@@ -92,40 +92,13 @@ Main component that displays:
 
 ## Usage Example
 
+Once implemented, the ScoreDisplay component will be used as follows:
+
 ```tsx
-import ScoreDisplay from './components/ScoreDisplay';
-import { Game } from './types';
-
-const App = () => {
-  const game: Game = {
-    id: 'game-1',
-    players: [
-      {
-        id: 'player-1',
-        name: 'Alice',
-        rounds: [
-          { bid: 2, tricks: 2, score: 20 },
-          { bid: 3, tricks: 2, score: -10 },
-        ],
-      },
-      {
-        id: 'player-2',
-        name: 'Bob',
-        rounds: [
-          { bid: 1, tricks: 1, score: 10 },
-          { bid: 2, tricks: 2, score: 20 },
-        ],
-      },
-    ],
-    currentRound: 2,
-    status: 'active',
-  };
-
-  return <ScoreDisplay game={game} gameEnded={false} />;
-};
-
-export default App;
+<ScoreDisplay game={game} gameEnded={false} />
 ```
+
+Where `game` is a Game object containing players and their round history.
 
 ## Data Types
 
@@ -159,12 +132,7 @@ interface Game {
 
 ## Testing
 
-Run the test suite with:
-```bash
-npm test -- ScoreDisplay.test.tsx
-```
-
-The test suite covers:
+Once implemented, the test suite should cover:
 - Component rendering
 - Display of total scores
 - Round history rendering
@@ -177,9 +145,10 @@ The test suite covers:
 
 ## Performance Considerations
 
-- Uses `useMemo` hooks to memoize calculated values (rankings, round history)
-- Prevents unnecessary re-renders of child elements
-- Efficient scoring calculations
+The implementation should:
+- Memoize calculated values (rankings, round history) to prevent unnecessary recalculations
+- Prevent unnecessary re-renders of child elements
+- Use efficient scoring calculation algorithms
 
 ## Browser Compatibility
 
