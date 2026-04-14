@@ -1,123 +1,246 @@
 # Skull King Scoring Engine
 
-A complete implementation of the Skull King card game scoring system.
+A production-grade scoring calculator for the Skull King card game, implementing complex scoring rules with full validation and transparency.
 
 ## Features
 
-### Scoring Rules
+- **Accurate Scoring**: Implements official Skull King scoring rules with precision
+- **Non-zero Bid Scoring**: +20 per correct trick, -10 per trick difference on misses
+- **Zero Bid Scoring**: +10×hand_number if exact, -10×hand_number if any tricks taken
+- **Bonus Point Handling**: Applies bonuses only when bids are exactly met
+- **Score Tracking**: Maintains cumulative scores across all rounds
+- **Detailed Breakdowns**: Provides transparent scoring explanations
+- **Comprehensive Validation**: Catches invalid inputs with clear error messages
 
-#### Non-Zero Bids
-- **Exact bid**: +20 per trick (e.g., bid 3, won 3 = 60 points)
-- **Missed bid**: -10 per trick difference (e.g., bid 5, won 3 = -20 points)
-- **Bonus points**: Only applied when bid is exactly met
+## Installation
 
-#### Zero Bids
-- **Exact (0 tricks)**: +10 × hand number (e.g., hand 3, bid 0, won 0 = 30 points)
-- **Missed (any tricks)**: -10 × hand number (e.g., hand 3, bid 0, won 2 = -30 points)
-- **Bonus points**: Only applied when bid is exactly met (0 tricks)
+```bash
+npm install
+```
 
-## API
+## Usage
 
-### `calculateHandScore(bid, tricks, handNumber, bonusPoints = 0)`
+### Basic Example
+
+```javascript
+const { calculateHandScore, calculateRoundScores, updateTotalScores } = require('./src/scoring');
+
+// Calculate score for a single hand
+const score = calculateHandScore(
+  5,      // bid amount
+  5,      // tricks taken
+  1,      // hand number
+  0       // bonus points (optional)
+);
+
+console.log(score);
+// Output: {
+//   baseScore: 100,      // 20 × 5 tricks
+//   bonusApplied: 0,
+//   totalScore: 100,
+//   breakdown: 'Non-zero bid exact: +20 × 5 tricks = 100',
+//   isBidExact: true
+// }
+```
+
+### Multiple Players
+
+```javascript
+const roundResults = [
+  { bid: 3, tricks: 3, handNumber: 1, playerId: 'Alice' },
+  { bid: 2, tricks: 1, handNumber: 1, playerId: 'Bob' },
+  { bid: 5, tricks: 5, handNumber: 1, playerId: 'Charlie', bonusPoints: 10 }
+];
+
+const roundScores = calculateRoundScores(roundResults);
+// Alice: 60 points (20 × 3)
+// Bob: -10 points (-10 × 1 difference)
+// Charlie: 110 points (20 × 5 + 10 bonus)
+
+let totals = {};
+totals = updateTotalScores(totals, roundScores);
+```
+
+## Scoring Rules
+
+### Non-Zero Bids (1-13)
+
+**Exact Bid**: +20 per trick taken
+```
+Example: bid=5, tricks=5
+Score = 20 × 5 = +100 points
+```
+
+**Missed Bid**: -10 per trick difference
+```
+Example 1: bid=5, tricks=3
+Score = -10 × (5-3) = -20 points
+
+Example 2: bid=3, tricks=7
+Score = -10 × (7-3) = -40 points
+```
+
+### Zero Bids
+
+**Exact Zero Bid**: +10 × hand_number (no tricks taken)
+```
+Example: bid=0, tricks=0, hand=2
+Score = +10 × 2 = +20 points
+```
+
+**Missed Zero Bid**: -10 × hand_number (any tricks taken)
+```
+Example: bid=0, tricks=2, hand=2
+Score = -10 × 2 = -20 points (regardless of trick count)
+```
+
+### Bonus Points
+
+Bonus points are **only applied when the bid is exactly met**.
+
+```
+Example 1 (Applied):
+bid=5, tricks=5, bonus=10
+Score = (20 × 5) + 10 = +110 points
+
+Example 2 (Not Applied):
+bid=5, tricks=3, bonus=10
+Score = -10 × 2 = -20 points (bonus ignored)
+
+Example 3 (Applied on zero bid):
+bid=0, tricks=0, hand=1, bonus=15
+Score = (10 × 1) + 15 = +25 points
+```
+
+## API Reference
+
+### calculateHandScore(bid, tricks, handNumber, bonusPoints = 0)
 
 Calculates the score for a single hand.
 
 **Parameters:**
-- `bid` (number): The number of tricks bid (0 or positive)
-- `tricks` (number): The number of tricks actually won
-- `handNumber` (number): The hand number (1-indexed)
-- `bonusPoints` (number, optional): Bonus points earned
+- `bid` (number): The bid amount (0-13)
+- `tricks` (number): Actual tricks taken (0-13)
+- `handNumber` (number): The hand number (1-indexed, used for zero bid scoring)
+- `bonusPoints` (number): Optional bonus points (only applied if bid is exact)
 
-**Returns:**
-```javascript
-{
-  baseScore: number,      // Score before bonus
-  bonus: number,          // Bonus points awarded
-  total: number,          // baseScore + bonus
-  bid: number,
-  tricks: number,
-  handNumber: number,
-  isExact: boolean,       // Whether bid was exactly met
-  bonusPoints: number
-}
-```
+**Returns:** Object with:
+- `baseScore`: Score before bonuses
+- `bonusApplied`: Bonus points applied (0 if bid missed)
+- `totalScore`: Final score (baseScore + bonusApplied)
+- `breakdown`: Human-readable scoring explanation
+- `isBidExact`: Boolean indicating if bid was met exactly
 
-**Examples:**
-```javascript
-// Exact non-zero bid with bonus
-calculateHandScore(3, 3, 1, 5)
-// Returns: { baseScore: 60, bonus: 5, total: 65, ... }
+**Throws:**
+- `TypeError`: If parameters are not the correct type
+- `RangeError`: If numeric parameters are outside valid ranges
 
-// Missed non-zero bid (no bonus applied)
-calculateHandScore(5, 3, 1, 10)
-// Returns: { baseScore: -20, bonus: 0, total: -20, ... }
+### calculateRoundScores(roundResults)
 
-// Exact zero bid with bonus
-calculateHandScore(0, 0, 2, 5)
-// Returns: { baseScore: 20, bonus: 5, total: 25, ... }
-
-// Missed zero bid (no bonus applied)
-calculateHandScore(0, 1, 1, 10)
-// Returns: { baseScore: -10, bonus: 0, total: -10, ... }
-```
-
-### `calculateRoundScores(hands)`
-
-Calculates scores for all hands in a round.
+Calculates scores for all players in a single round.
 
 **Parameters:**
-- `hands` (array): Array of hand objects with {bid, tricks, handNumber, bonusPoints}
+- `roundResults` (Array): Array of hand result objects, each with:
+  - `bid` (number): The bid amount
+  - `tricks` (number): Tricks taken
+  - `handNumber` (number): Hand number
+  - `bonusPoints` (number, optional): Bonus points
+  - `playerId` (string, optional): Player identifier
 
-**Returns:**
-```javascript
-{
-  hands: array,           // Hand score objects
-  roundTotal: number,     // Sum of all hand totals
-  breakdown: array        // Formatted breakdown for display
-}
-```
+**Returns:** Object mapping playerId to score results
 
-### `updatePlayerScores(players, roundScores)`
+### updateTotalScores(currentTotals, roundScores)
 
-Updates cumulative player scores after a round.
+Updates cumulative game scores with a round's scores.
 
 **Parameters:**
-- `players` (array): Player objects with score property
-- `roundScores` (array): Round score total for each player
+- `currentTotals` (Object): Current cumulative scores by playerId
+- `roundScores` (Object): Round scores from calculateRoundScores
 
-**Returns:**
-Updated player array with new scores and previous scores tracked.
+**Returns:** New object with updated cumulative scores
 
-### `formatScoreBreakdown(roundScoring, playerNames = [])`
+### getScoreBreakdown(roundScores)
 
-Formats score breakdown as human-readable string.
+Converts round scores to a breakdown array for display.
 
 **Parameters:**
-- `roundScoring` (object): Result from calculateRoundScores
-- `playerNames` (array, optional): Names of players
+- `roundScores` (Object): Round scores from calculateRoundScores
 
-**Returns:**
-Formatted string with detailed score breakdown.
+**Returns:** Array of breakdown objects with playerId and all score details
 
 ## Testing
 
-Run tests with:
 ```bash
 npm test
 ```
 
-Tests cover:
-- Non-zero bid scoring (exact and missed)
-- Zero bid scoring (exact and missed)
-- Bonus point application (only on exact bids)
-- Round calculations
-- Player score updates
-- Error handling and validation
-- Output formatting
+The test suite includes:
+- 40+ unit tests covering all scoring scenarios
+- Edge case validation (bid=13, hand multipliers, etc.)
+- Bonus point application logic
+- Error handling and input validation
+- Integration tests for multi-round scenarios
 
-## Implementation Notes
+All acceptance criteria are covered with explicit test cases.
 
-1. **Bonus Points**: Correctly constrained to only apply when bid is exactly met
-2. **Error Handling**: Input validation for all parameters
-3. **Transparency**: Score breakdown shows each hand's calculation
-4. **Flexibility**: Hand number and bonus points are configurable
+## Scoring Examples
+
+### Example 1: Standard Non-Zero Bid
+```javascript
+calculateHandScore(5, 5, 1)
+// Result: baseScore=100, totalScore=100
+// Explanation: Bid exactly 5 tricks, got 5 tricks → 20 × 5 = +100
+```
+
+### Example 2: Missed Non-Zero Bid
+```javascript
+calculateHandScore(5, 3, 1)
+// Result: baseScore=-20, totalScore=-20
+// Explanation: Bid 5 tricks, got 3 → -10 × |5-3| = -10 × 2 = -20
+```
+
+### Example 3: Exact Zero Bid (as documented)
+```javascript
+calculateHandScore(0, 0, 2, 5)
+// Result: baseScore=20, bonusApplied=5, totalScore=25
+// Explanation: Bid 0 on hand 2, took 0 tricks → 10 × 2 = +20, +5 bonus = +25
+```
+
+### Example 4: Missed Zero Bid
+```javascript
+calculateHandScore(0, 1, 2)
+// Result: baseScore=-20, totalScore=-20
+// Explanation: Bid 0 on hand 2, took 1 trick → -10 × 2 = -20 (bonus not applied)
+```
+
+## Implementation Details
+
+- **Single Responsibility**: Each function has one clear purpose
+- **Immutability**: Functions don't mutate input objects
+- **Error First**: Validates all inputs before processing
+- **Transparency**: Every calculation includes a breakdown string
+- **Type Safety**: Runtime type checking for all parameters
+
+## Development
+
+### File Structure
+```
+├── src/
+│   ├── scoring.js              # Main scoring engine
+│   └── scoring.test.js         # Comprehensive test suite
+├── .gitignore
+├── README.md
+└── package.json
+```
+
+### Adding Tests
+
+Each new feature should include tests covering:
+1. Normal operation
+2. Edge cases (bid=0, bid=13, hand=1, hand=13, etc.)
+3. Error conditions
+4. Integration with other functions
+
+## License
+
+MIT
