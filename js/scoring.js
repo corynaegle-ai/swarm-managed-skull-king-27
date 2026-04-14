@@ -1,184 +1,138 @@
 /**
  * Scoring module for Oh Hell card game
- * Implements score calculation, input validation, real-time updates, and form management
+ * Handles score calculation, real-time updates, and form validation
  */
 
 /**
- * Calculate score based on Oh Hell rules
- * @param {number} bid - The number of tricks bid
- * @param {number} tricks - The number of tricks actually taken
- * @param {number} bonus - Bonus points to add
+ * Calculates the score based on Oh Hell scoring rules
+ * @param {number} bid - The bid (tricks player predicted)
+ * @param {number} tricks - The tricks player actually took
+ * @param {number} bonus - Optional bonus points
  * @returns {number} The calculated score
- * @throws {Error} If inputs are invalid
  */
-function calculateScore(bid, tricks, bonus) {
-  // Validate that inputs are numbers and not NaN
-  if (typeof bid !== 'number' || isNaN(bid) || bid < 0) {
-    throw new Error('Invalid bid: must be a non-negative number');
-  }
-  if (typeof tricks !== 'number' || isNaN(tricks) || tricks < 0) {
-    throw new Error('Invalid tricks: must be a non-negative number');
-  }
-  if (typeof bonus !== 'number' || isNaN(bonus) || bonus < 0) {
-    throw new Error('Invalid bonus: must be a non-negative number');
+function calculateScore(bid, tricks, bonus = 0) {
+  // Validate inputs
+  if (typeof bid !== 'number' || typeof tricks !== 'number' || typeof bonus !== 'number') {
+    return 0;
   }
 
-  // Oh Hell scoring: exact bid = 10 + tricks + bonus, wrong bid = 0 + bonus
+  // Oh Hell scoring rules: exact bid = 10 + tricks + bonus, wrong bid = 0 + bonus
   if (bid === tricks) {
     return 10 + tricks + bonus;
-  }
-  return 0 + bonus;
-}
-
-/**
- * Validate tricks input against maximum allowed
- * @param {number} tricksValue - The tricks value to validate
- * @param {number} maxTricks - The maximum allowed tricks
- * @returns {boolean} True if valid (0 <= tricksValue <= maxTricks)
- */
-function validateTricksInput(tricksValue, maxTricks) {
-  // Check that tricks is a non-negative number and doesn't exceed max
-  if (isNaN(tricksValue) || tricksValue < 0 || tricksValue > maxTricks) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * Get current form values from the scoring form
- * @returns {Object} Object with bid, tricks, and bonus values (or null if not found)
- */
-function getFormValues() {
-  const bidInput = document.querySelector('#bid-input');
-  const tricksInput = document.querySelector('#tricks-input');
-  const bonusInput = document.querySelector('#bonus-input');
-
-  if (!bidInput || !tricksInput) {
-    return null;
-  }
-
-  const bid = bidInput.value.trim() !== '' ? parseInt(bidInput.value, 10) : null;
-  const tricks = tricksInput.value.trim() !== '' ? parseInt(tricksInput.value, 10) : null;
-  const bonus = bonusInput && bonusInput.value.trim() !== '' ? parseInt(bonusInput.value, 10) : 0;
-
-  return { bid, tricks, bonus };
-}
-
-/**
- * Update the score display element with the current calculated score
- * Also handles button state enabling/disabling
- */
-function updateScoreDisplay() {
-  const scoreDisplay = document.querySelector('#score-display');
-  const nextButton = document.querySelector('#next-button');
-
-  if (!scoreDisplay) {
-    return;
-  }
-
-  const values = getFormValues();
-  if (!values) {
-    return;
-  }
-
-  const { bid, tricks, bonus } = values;
-
-  // Check if form is complete: bid and tricks must be provided (bonus is optional)
-  const isFormComplete = bid !== null && tricks !== null;
-
-  // Enable/disable next button based on form completion
-  if (nextButton) {
-    nextButton.disabled = !isFormComplete;
-  }
-
-  // Only update score display if we have both bid and tricks
-  if (isFormComplete) {
-    try {
-      const score = calculateScore(bid, tricks, bonus);
-      scoreDisplay.textContent = score;
-    } catch (error) {
-      // If calculation fails due to validation, display error or fallback
-      scoreDisplay.textContent = 'Invalid';
-    }
   } else {
-    scoreDisplay.textContent = '--';
+    return 0 + bonus;
   }
 }
 
 /**
- * Initialize the scoring form with event listeners and validation
+ * Initializes the scoring form with event listeners and validation
  * @param {Object} config - Configuration object
- * @param {number} config.maxTricks - Maximum tricks allowed for this round
+ * @param {number} config.maxTricks - Maximum tricks allowed in the game
  */
 function initializeScoringForm(config = {}) {
-  const { maxTricks = 13 } = config;
+  const maxTricks = config.maxTricks || 13;
 
-  const bidInput = document.querySelector('#bid-input');
-  const tricksInput = document.querySelector('#tricks-input');
-  const bonusInput = document.querySelector('#bonus-input');
-  const scoreDisplay = document.querySelector('#score-display');
+  // Get DOM elements
+  const bidInput = document.getElementById('bid-input');
+  const tricksInput = document.getElementById('tricks-input');
+  const bonusInput = document.getElementById('bonus-input');
+  const scoreDisplay = document.getElementById('score-display');
+  const nextButton = document.getElementById('next-button');
 
-  // Validate that required elements exist
-  if (!bidInput || !tricksInput || !scoreDisplay) {
-    throw new Error('Required form elements not found');
+  // Validate that all required elements exist
+  if (!bidInput || !tricksInput || !bonusInput || !scoreDisplay || !nextButton) {
+    console.error('Error: Could not find all required form elements');
+    return;
   }
 
-  // Set up event listeners for real-time updates
-  bidInput.addEventListener('input', () => {
-    const bidValue = bidInput.value.trim();
-    if (bidValue !== '') {
-      const bid = parseInt(bidValue, 10);
-      // Basic validation: bid should be non-negative
-      if (isNaN(bid) || bid < 0) {
-        bidInput.classList.add('error');
-      } else {
-        bidInput.classList.remove('error');
-      }
+  /**
+   * Updates the score display and button state based on current input values
+   */
+  function updateScoreDisplay() {
+    const bid = bidInput.value ? parseInt(bidInput.value, 10) : null;
+    const tricks = tricksInput.value ? parseInt(tricksInput.value, 10) : null;
+    const bonus = bonusInput.value ? parseInt(bonusInput.value, 10) : 0;
+
+    // Check if form is complete
+    const isFormComplete = bid !== null && tricks !== null;
+
+    if (isFormComplete) {
+      // Calculate and display score
+      const score = calculateScore(bid, tricks, bonus);
+      scoreDisplay.textContent = score;
+      nextButton.disabled = false;
+    } else {
+      // Clear display and disable button
+      scoreDisplay.textContent = '--';
+      nextButton.disabled = true;
     }
+  }
+
+  /**
+   * Validates bid input
+   */
+  function validateBid() {
+    const bid = bidInput.value ? parseInt(bidInput.value, 10) : null;
+    if (bid !== null) {
+      // Bid must be between 0 and maxTricks
+      if (bid < 0 || bid > maxTricks) {
+        bidInput.setCustomValidity(`Bid must be between 0 and ${maxTricks}`);
+        return false;
+      }
+      bidInput.setCustomValidity('');
+      return true;
+    }
+    bidInput.setCustomValidity('');
+    return true;
+  }
+
+  /**
+   * Validates tricks input
+   */
+  function validateTricks() {
+    const tricks = tricksInput.value ? parseInt(tricksInput.value, 10) : null;
+    if (tricks !== null) {
+      // Tricks taken must be between 0 and maxTricks
+      if (tricks < 0 || tricks > maxTricks) {
+        tricksInput.setCustomValidity(`Tricks must be between 0 and ${maxTricks}`);
+        return false;
+      }
+      tricksInput.setCustomValidity('');
+      return true;
+    }
+    tricksInput.setCustomValidity('');
+    return true;
+  }
+
+  /**
+   * Validates bonus input
+   */
+  function validateBonus() {
+    const bonus = bonusInput.value ? parseInt(bonusInput.value, 10) : null;
+    if (bonus !== null && bonus < 0) {
+      bonusInput.setCustomValidity('Bonus must be non-negative');
+      return false;
+    }
+    bonusInput.setCustomValidity('');
+    return true;
+  }
+
+  // Add event listeners for real-time updates
+  bidInput.addEventListener('input', () => {
+    validateBid();
     updateScoreDisplay();
   });
 
   tricksInput.addEventListener('input', () => {
-    const tricksValue = tricksInput.value.trim();
-    if (tricksValue !== '') {
-      const tricks = parseInt(tricksValue, 10);
-      // Validate: tricks must be non-negative and <= maxTricks
-      if (!validateTricksInput(tricks, maxTricks)) {
-        tricksInput.classList.add('error');
-      } else {
-        tricksInput.classList.remove('error');
-      }
-    }
+    validateTricks();
     updateScoreDisplay();
   });
 
-  if (bonusInput) {
-    bonusInput.addEventListener('input', () => {
-      const bonusValue = bonusInput.value.trim();
-      if (bonusValue !== '') {
-        const bonus = parseInt(bonusValue, 10);
-        // Validate: bonus should be non-negative
-        if (isNaN(bonus) || bonus < 0) {
-          bonusInput.classList.add('error');
-        } else {
-          bonusInput.classList.remove('error');
-        }
-      }
-      updateScoreDisplay();
-    });
-  }
+  bonusInput.addEventListener('input', () => {
+    validateBonus();
+    updateScoreDisplay();
+  });
 
-  // Initialize button state
+  // Initialize display
   updateScoreDisplay();
-}
-
-// Export functions for use in browser or testing environment
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    calculateScore,
-    validateTricksInput,
-    getFormValues,
-    updateScoreDisplay,
-    initializeScoringForm
-  };
 }
