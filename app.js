@@ -1,107 +1,46 @@
 /**
  * Skull King - Main Application Entry Point
- * 
- * This file initializes the application state and sets up
- * the core functionality for the Skull King game.
+ * Initializes app state and DOM readiness
  */
 
-// ==========================================
-// Application State
-// ==========================================
-
-const AppState = {
-    isInitialized: false,
-    gameStatus: 'idle',
+// Application state
+const appState = {
+    gameActive: false,
     players: [],
     currentRound: 0,
+    initialized: false
 };
 
-// ==========================================
-// DOM Elements
-// ==========================================
-
-const DOM = {
-    app: document.getElementById('app'),
-    mainContent: document.getElementById('main-content'),
-    gameSection: document.getElementById('game-section'),
-};
-
-// ==========================================
-// Utility Functions
-// ==========================================
-
 /**
- * Validates that required DOM elements exist
- * @returns {boolean} True if all required elements are present
- */
-function validateDOMElements() {
-    const requiredElements = ['app', 'main-content', 'game-section'];
-    for (const elementId of requiredElements) {
-        if (!document.getElementById(elementId)) {
-            console.error(`Missing required DOM element: #${elementId}`);
-            return false;
-        }
-    }
-    return true;
-}
-
-/**
- * Logs application initialization message
- */
-function logInitialization() {
-    console.log('=== Skull King Application Initialized ===');
-    console.log('App State:', AppState);
-    console.log('DOM Elements Validated: OK');
-}
-
-// ==========================================
-// Initialization
-// ==========================================
-
-/**
- * Initializes the application
- * Called when DOM is ready
+ * Initialize the application when DOM is ready
  */
 function initializeApp() {
     try {
-        // Validate DOM structure
-        if (!validateDOMElements()) {
-            throw new Error('DOM validation failed');
+        // Verify required DOM elements exist
+        const appContainer = document.getElementById('app');
+        const mainContent = document.getElementById('main-content');
+        const gameSection = document.getElementById('game-section');
+
+        if (!appContainer || !mainContent || !gameSection) {
+            throw new Error('Required DOM elements not found');
         }
 
-        // Set initial state
-        AppState.isInitialized = true;
-        AppState.gameStatus = 'ready';
+        // Set app initialized flag
+        appState.initialized = true;
 
         // Log successful initialization
-        logInitialization();
+        console.log('Skull King app initialized successfully', appState);
 
     } catch (error) {
-        console.error('Failed to initialize application:', error.message);
-        AppState.isInitialized = false;
+        console.error('Failed to initialize Skull King app:', error);
+        throw error;
     }
 }
 
-// ==========================================
-// Event Listeners
-// ==========================================
-
-// Initialize app when DOM is ready
+// Initialize when DOM content is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-    // DOM is already loaded
+    // DOM already loaded
     initializeApp();
-}
-
-// ==========================================
-// Exports (for testing or module integration)
-// ==========================================
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        AppState,
-        initializeApp,
-        validateDOMElements,
-    };
 }
