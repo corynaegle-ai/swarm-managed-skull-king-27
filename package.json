@@ -1,0 +1,12 @@
+{
+  "name": "skull-king-scoring",
+  "version": "1.0.0",
+  "description": "Oh Hell card game scoring system",
+  "main": "js/scoring.js",
+  "scripts": {
+    "test": "node js/scoring.test.js"
+  },
+  "keywords": ["skull-king", "oh-hell", "card-game", "scoring"],
+  "author": "",
+  "license": "ISC"
+}
