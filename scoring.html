@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skull King - Scoring</title>
+  <link rel="stylesheet" href="css/scoring.css">
+</head>
+<body>
+  <div class="scoring-container">
+    <h1>Oh Hell - Round Scoring</h1>
+    
+    <form id="scoring-form" class="scoring-form">
+      <div class="form-group">
+        <label for="bid-input">Bid (tricks):</label>
+        <input
+          type="number"
+          id="bid-input"
+          name="bid"
+          min="0"
+          placeholder="Enter bid"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="tricks-input">Tricks Taken:</label>
+        <input
+          type="number"
+          id="tricks-input"
+          name="tricks"
+          min="0"
+          placeholder="Enter tricks taken"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="bonus-input">Bonus Points:</label>
+        <input
+          type="number"
+          id="bonus-input"
+          name="bonus"
+          min="0"
+          placeholder="Enter bonus (optional)"
+        />
+      </div>
+
+      <div class="score-display-group">
+        <label>Your Score:</label>
+        <div id="score-display" class="score-display">--</div>
+      </div>
+
+      <button type="button" id="next-button" class="next-button" disabled>
+        Next
+      </button>
+    </form>
+  </div>
+
+  <script src="js/scoring.js"></script>
+  <script>
+    // Initialize scoring form when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        initializeScoringForm({ maxTricks: 13 });
+      });
+    } else {
+      initializeScoringForm({ maxTricks: 13 });
+    }
+  </script>
+</body>
+</html>
