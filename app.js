@@ -48,14 +48,8 @@
      * Set up event listeners for the application
      */
     function setupEventListeners() {
-        try {
-            // Future event listeners will be added here
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('DOM is fully loaded');
-            });
-        } catch (error) {
-            handleError('Event Listener Setup Error', error);
-        }
+        // Placeholder for future UI event listeners (click, input, submit, etc.)
+        // Do NOT add DOMContentLoaded listeners here—DOM is already loaded when this executes
     }
 
     /**
