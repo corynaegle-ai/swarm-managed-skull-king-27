@@ -3,6 +3,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoring - Tricks Game</title>
+    <link rel="stylesheet" href="css/scoring.css">
+</head>
+<body>
+    <div class="scoring-container">
+        <header class="scoring-header">
+            <h1>Round Scoring</h1>
+            <p class="round-info">Enter tricks taken and bonus points for each player</p>
+        </header>
+
+        <form class="scoring-form" id="scoringForm">
+            <div class="players-grid" id="playersGrid">
+                <!-- Player cards will be populated by JavaScript -->
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="resetBtn">Reset</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Submit Scores</button>
+            </div>
+        </form>
+
+        <div class="round-navigation">
+            <button class="btn btn-nav" id="prevRoundBtn" disabled>← Previous Round</button>
+            <div class="round-display" id="roundDisplay">Round 1</div>
+            <button class="btn btn-nav" id="nextRoundBtn" disabled>Next Round →</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock player data - in a real app, this would come from previous game state
+        const players = [
+            { id: 1, name: 'Player 1', bid: 3, handCount: 5 },
+            { id: 2, name: 'Player 2', bid: 2, handCount: 5 },
+            { id: 3, name: 'Player 3', bid: 4, handCount: 5 },
+            { id: 4, name: 'Player 4', bid: 1, handCount: 5 }
+        ];
+
+        let currentRound = 1;
+        const scores = {};
+
+        // Initialize the form with player cards
+        function initializeForm() {
+            const playersGrid = document.getElementById('playersGrid');
+            playersGrid.innerHTML = '';
+
+            players.forEach(player => {
+                const playerCard = createPlayerCard(player);
+                playersGrid.appendChild(playerCard);
+                
+                // Initialize score tracking
+                if (!scores[player.id]) {
+                    scores[player.id] = { tricks: 0, bonus: 0 };
+                }
+            });
+        }
+
+        // Create individual player card
+        function createPlayerCard(player) {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.dataset.playerId = player.id;
+
+            const playerName = document.createElement('div');
+            playerName.className = 'player-name';
+            playerName.textContent = player.name;
+
+            const bidDisplay = document.createElement('div');
+            bidDisplay.className = 'bid-display';
+            bidDisplay.innerHTML = `<span class="bid-label">Bid:</span><span class="bid-value">${player.bid}</span>`;
+
+            const tricksGroup = document.createElement('div');
+            tricksGroup.className = 'form-group';
+            tricksGroup.innerHTML = `
+                <label for="tricks-${player.id}">Tricks Taken</label>
+                <input 
+                    type="number" 
+                    id="tricks-${player.id}" 
+                    name="tricks-${player.id}" 
+                    class="tricks-input"
+                    min="0" 
+                    max="${player.handCount}" 
+                    value="0"
+                    required
+                >
+                <span class="input-hint">0 to ${player.handCount}</span>
+            `;
+
+            const bonusGroup = document.createElement('div');
+            bonusGroup.className = 'form-group';
+            bonusGroup.innerHTML = `
+                <label for="bonus-${player.id}">Bonus Points</label>
+                <input 
+                    type="number" 
+                    id="bonus-${player.id}" 
+                    name="bonus-${player.id}" 
+                    class="bonus-input"
+                    min="0" 
+                    value="0"
+                    required
+                >
+                <span class="input-hint">Optional bonus points</span>
+            `;
+
+            const scoreDisplay = document.createElement('div');
+            scoreDisplay.className = 'score-display';
+            scoreDisplay.innerHTML = `
+                <div class="score-label">Total Score</div>
+                <div class="score-value" data-player-id="${player.id}">0</div>
+            `;
+
+            // Event listeners for live score calculation
+            const tricksInput = tricksGroup.querySelector('input');
+            const bonusInput = bonusGroup.querySelector('input');
+
+            tricksInput.addEventListener('change', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value < 0) e.target.value = 0;
+                if (value > player.handCount) e.target.value = player.handCount;
+                updateScore(player.id, player.bid);
+                checkFormValidity();
+            });
+
+            bonusInput.addEventListener('change', (e) => {
+                const value = parseInt(e.target.value) || 0;
+                if (value < 0) e.target.value = 0;
+                updateScore(player.id, player.bid);
+                checkFormValidity();
+            });
+
+            card.appendChild(playerName);
+            card.appendChild(bidDisplay);
+            card.appendChild(tricksGroup);
+            card.appendChild(bonusGroup);
+            card.appendChild(scoreDisplay);
+
+            return card;
+        }
+
+        // Calculate and update score for a player
+        function updateScore(playerId, bid) {
+            const tricksInput = document.getElementById(`tricks-${playerId}`);
+            const bonusInput = document.getElementById(`bonus-${playerId}`);
+            const scoreDisplay = document.querySelector(`[data-player-id="${playerId}"]`);
+
+            const tricks = parseInt(tricksInput.value) || 0;
+            const bonus = parseInt(bonusInput.value) || 0;
+
+            scores[playerId] = { tricks, bonus };
+
+            // Score calculation: if bid is met, score = bid + bonus, otherwise score = -bid + bonus
+            const score = tricks >= bid ? bid + bonus : -bid + bonus;
+
+            scoreDisplay.textContent = score;
+            scoreDisplay.parentElement.style.background = score >= 0 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)';
+        }
+
+        // Check if all required fields are filled
+        function checkFormValidity() {
+            const form = document.getElementById('scoringForm');
+            const allInputs = form.querySelectorAll('input[type="number"]');
+            const allFilled = Array.from(allInputs).every(input => input.value !== '' && input.value !== null);
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+            
+            submitBtn.disabled = !allFilled;
+            nextRoundBtn.disabled = !allFilled;
+        }
+
+        // Reset form to initial state
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            document.getElementById('scoringForm').reset();
+            players.forEach(player => {
+                scores[player.id] = { tricks: 0, bonus: 0 };
+                updateScore(player.id, player.bid);
+            });
+            checkFormValidity();
+        });
+
+        // Submit scores
+        document.getElementById('scoringForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Scores submitted:', scores);
+            alert('Scores submitted successfully! (Check console for details)');
+        });
+
+        // Navigation buttons
+        document.getElementById('prevRoundBtn').addEventListener('click', () => {
+            if (currentRound > 1) {
+                currentRound--;
+                updateRoundDisplay();
+            }
+        });
+
+        document.getElementById('nextRoundBtn').addEventListener('click', () => {
+            currentRound++;
+            updateRoundDisplay();
+        });
+
+        function updateRoundDisplay() {
+            document.getElementById('roundDisplay').textContent = `Round ${currentRound}`;
+            document.getElementById('prevRoundBtn').disabled = currentRound === 1;
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeForm();
+            checkFormValidity();
+            updateRoundDisplay();
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Score Entry - Tricks Game</title>
     <link rel="stylesheet" href="css/scoring.css">
 </head>
