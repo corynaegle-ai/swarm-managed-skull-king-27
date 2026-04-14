@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skull King Game</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Player Setup Section -->
+    <section id="playerSetup" class="player-setup">
+      <h1>Skull King - Player Setup</h1>
+      
+      <!-- Player Input Form -->
+      <form id="playerForm" class="player-form">
+        <div class="form-group">
+          <label for="playerNameInput">Player Name:</label>
+          <input 
+            type="text" 
+            id="playerNameInput" 
+            name="playerName" 
+            class="player-input" 
+            data-target="playerInput"
+            placeholder="Enter player name" 
+            required
+          >
+        </div>
+        <button 
+          type="button" 
+          id="addPlayerBtn" 
+          class="btn btn-primary" 
+          data-action="addPlayer"
+        >
+          Add Player
+        </button>
+      </form>
+
+      <!-- Player List Display Area -->
+      <div class="player-list-container">
+        <h2>Players</h2>
+        <ul 
+          id="playerList" 
+          class="player-list" 
+          data-target="playerList"
+        >
+          <!-- Players will be added here dynamically -->
+        </ul>
+      </div>
+
+      <!-- Start Game Button -->
+      <button 
+        type="button" 
+        id="startGameBtn" 
+        class="btn btn-success" 
+        data-action="startGame"
+        disabled
+      >
+        Start Game
+      </button>
+    </section>
+  </div>
+
+  <!-- Game Board Section (placeholder for future use) -->
+  <section id="gameBoard" class="game-board" style="display: none;">
+    <!-- Game content will be added here -->
+  </section>
+
+  <script src="js/playerManager.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
