@@ -18,7 +18,7 @@ class TestNonZeroBidScoring:
         )
         assert breakdown.is_exact is True
         assert breakdown.base_score == 60  # 20 × 3
-        assert breakdown.bonus_score == 30  # 10 × 3
+        assert breakdown.bonus_score == 30  # 10 × 3 (bonus only applies if exact)
         assert breakdown.total_score == 90
 
     def test_exact_bid_single_trick(self):
@@ -30,9 +30,9 @@ class TestNonZeroBidScoring:
             bid=1,
             tricks_taken=1,
         )
-        assert breakdown.base_score == 20
-        assert breakdown.bonus_score == 10
-        assert breakdown.total_score == 30
+        assert breakdown.base_score == 20  # 20 × 1
+        assert breakdown.bonus_score == 10  # 10 × 1 (bonus only applies if exact)
+        assert breakdown.total_score == 30  # 20 + 10
 
     def test_missed_bid_minus_10_per_difference(self):
         """Test that missed bids lose -10 per trick difference."""
@@ -139,7 +139,7 @@ class TestBonusPoints:
         
         # Exact bid: should have bonus
         exact = scorer.calculate_hand_score("p1", 1, 2, 2)
-        assert exact.bonus_score == 20  # 10 × 2
+        assert exact.bonus_score == 20  # 10 × bid (2)
         
         # Missed bid: no bonus
         missed = scorer.calculate_hand_score("p1", 1, 2, 3)
@@ -309,10 +309,10 @@ class TestIntegration:
         scorer.update_total_score("p2", b4.total_score)
         
         # Check totals
-        # P1: 90 (hand 1 exact) + (-20 from 2 trick diff in hand 2) = 70
-        assert scorer.get_total_score("p1") == 70
+        # P1: 60 (hand 1: 20×2 + 10×2 bonus) + (-20 from 2 trick diff in hand 2) = 60
+        assert scorer.get_total_score("p1") == 60
         
-        # P2: 10 (hand 1 exact zero bid) + 30 (hand 2 exact 1 trick) = 40
+        # P2: 10 (hand 1 exact zero bid) + 30 (hand 2: 20×1 + 10×1 bonus) = 40
         assert scorer.get_total_score("p2") == 40
 
     def test_reset_scores(self):
