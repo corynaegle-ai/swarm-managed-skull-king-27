@@ -181,7 +181,7 @@ body {
     margin: 0;
 }
 
-.form-group input[type="number"][type="number"] {
+.form-group input[type="number"] {
     -moz-appearance: textfield;
 }
 
