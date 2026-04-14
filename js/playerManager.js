@@ -1,43 +1,38 @@
-import * as gameState from './gameState.js';
+/**
+ * Player Manager Module
+ * Handles player-related operations and score management
+ */
 
-// In-memory storage for players
+import { getCurrentRound, getTotalRounds } from './gameState.js';
+
 let players = [];
 let nextPlayerId = 1;
 
 /**
- * Creates a unique player ID
- * @returns {number} Unique player ID
- */
-function generatePlayerId() {
-  return nextPlayerId++;
-}
-
-/**
- * Adds a new player to the game
- * @param {string} name - Player name
- * @returns {Object} Created player object with id, name, scores array, and totalScore
- * @throws {Error} If name is empty or invalid
+ * Add a new player to the game
+ * @param {string} name - The player's name
+ * @returns {object} The created player object with id, name, scores array, and totalScore
  */
 export function addPlayer(name) {
   if (!name || typeof name !== 'string' || name.trim() === '') {
     throw new Error('Player name must be a non-empty string');
   }
-
+  
   const player = {
-    id: generatePlayerId(),
+    id: nextPlayerId++,
     name: name.trim(),
     scores: [],
     totalScore: 0
   };
-
+  
   players.push(player);
-  return player;
+  return { ...player };
 }
 
 /**
- * Removes a player from the game
- * @param {number} id - Player ID to remove
- * @returns {boolean} True if player was removed, false otherwise
+ * Remove a player from the game
+ * @param {number} id - The player's ID
+ * @returns {boolean} True if player was removed, false if not found
  */
 export function removePlayer(id) {
   const initialLength = players.length;
@@ -46,57 +41,73 @@ export function removePlayer(id) {
 }
 
 /**
- * Updates a player's score for the current round
- * @param {number} playerId - Player ID
- * @param {number} roundScore - Score for this round
- * @throws {Error} If player not found or score is invalid
+ * Update a player's score for the current round
+ * @param {number} playerId - The player's ID
+ * @param {number} roundScore - The score for the current round
  */
 export function updatePlayerScore(playerId, roundScore) {
-  if (typeof roundScore !== 'number' || roundScore < 0) {
-    throw new Error('Round score must be a non-negative number');
+  if (typeof roundScore !== 'number' || isNaN(roundScore)) {
+    throw new Error('Round score must be a valid number');
   }
-
-  const player = getPlayer(playerId);
+  
+  const player = players.find(p => p.id === playerId);
   if (!player) {
-    throw new Error(`Player with ID ${playerId} not found`);
+    throw new Error(`Player with id ${playerId} not found`);
   }
-
-  player.scores.push(roundScore);
-  player.totalScore += roundScore;
+  
+  const currentRound = getCurrentRound();
+  
+  // Ensure scores array is large enough for current round
+  while (player.scores.length <= currentRound) {
+    player.scores.push(0);
+  }
+  
+  // Update score for current round
+  player.scores[currentRound] = roundScore;
+  
+  // Recalculate total score
+  player.totalScore = player.scores.reduce((sum, score) => sum + score, 0);
 }
 
 /**
- * Gets a player by ID
- * @param {number} id - Player ID
- * @returns {Object|null} Player object or null if not found
+ * Get a specific player by ID
+ * @param {number} id - The player's ID
+ * @returns {object} The player object, or null if not found
  */
 export function getPlayer(id) {
-  return players.find(p => p.id === id) || null;
+  const player = players.find(p => p.id === id);
+  return player ? { ...player, scores: [...player.scores] } : null;
 }
 
 /**
- * Gets all players
- * @returns {Array} Array of all player objects
+ * Get all players
+ * @returns {array} Array of all player objects
  */
 export function getAllPlayers() {
-  return [...players];
+  return players.map(p => ({
+    ...p,
+    scores: [...p.scores]
+  }));
 }
 
 /**
- * Calculates final scores and returns players sorted by total score (highest first)
- * @returns {Array} Array of players sorted by totalScore in descending order
+ * Calculate final scores and return players sorted by total score (highest first)
+ * @returns {array} Players sorted by total score in descending order
  */
 export function calculateFinalScores() {
-  return [...players]
-    .map(player => ({
-      ...player,
-      scores: [...player.scores]
+  // Create a copy and sort by totalScore descending
+  const sorted = players
+    .map(p => ({
+      ...p,
+      scores: [...p.scores]
     }))
     .sort((a, b) => b.totalScore - a.totalScore);
+  
+  return sorted;
 }
 
 /**
- * Resets all players and the ID counter (useful for testing)
+ * Reset all players (for testing or game restart)
  */
 export function resetPlayers() {
   players = [];
@@ -104,9 +115,11 @@ export function resetPlayers() {
 }
 
 /**
- * Gets the count of current players
- * @returns {number} Number of players in the game
+ * Get the total score for a specific player
+ * @param {number} id - The player's ID
+ * @returns {number} The player's total score, or null if not found
  */
-export function getPlayerCount() {
-  return players.length;
+export function getPlayerTotalScore(id) {
+  const player = players.find(p => p.id === id);
+  return player ? player.totalScore : null;
 }
