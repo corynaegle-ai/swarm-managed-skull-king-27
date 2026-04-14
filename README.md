@@ -93,15 +93,13 @@ Score = -10 × 2 = -20 points (regardless of trick count)
 
 ### Bonus Points
 
-Bonus points are **automatically included in the score only when the bid is exactly met on non-zero bids**. The bonus is calculated as 10 × hand_number and is automatically added to the base score.
-
-Zero bids never receive bonus points, even if exactly met (no tricks taken).
+Bonus points are **only applied when the bid is exactly met on non-zero bids**. When an exact non-zero bid is achieved, the bonus is calculated as 10 × hand_number and added to the base score. This bonus must be explicitly provided as input (player-entered bonus points). Zero bids never receive bonus points, even if exactly met (no tricks taken).
 
 ```
-Example 1 (Applied Automatically):
+Example 1 (Applied on Exact Bid):
 bid=5, tricks=5, hand=1
 baseScore = 20 × 5 = 100
-bonusScore = 10 × 1 = 10 (automatically applied for exact bid)
+bonusScore = 10 × 1 = 10 (applied only because bid is exact)
 totalScore = 100 + 10 = +110 points
 
 Example 2 (Not Applied - Bid Missed):
@@ -119,7 +117,7 @@ totalScore = +10 points
 
 ## API Reference
 
-### calculateRoundScore(bid, tricks, hands)
+### calculateRoundScore(bid, tricks, hands, bonus)
 
 Calculates the score for a single round/hand.
 
@@ -127,10 +125,11 @@ Calculates the score for a single round/hand.
 - `bid` (number): The bid amount (0 or higher)
 - `tricks` (number): Actual tricks taken (0 or higher)
 - `hands` (number): The hand/round number (positive integer, used for multipliers)
+- `bonus` (number, optional): Player-entered bonus points to apply only when bid is exactly met (default: 0)
 
 **Returns:** Object with:
 - `baseScore`: Score from bid correctness (±20 per trick for non-zero, ±10×hands for zero)
-- `bonusScore`: Automatic bonus points applied only for exact non-zero bids (10×hands if exact, 0 otherwise). Zero bids never receive bonus points.
+- `bonusScore`: Bonus points applied only for exact non-zero bids (10×hands if exact and bonus provided, 0 otherwise). Zero bids never receive bonus points.
 - `totalScore`: Final score (baseScore + bonusScore)
 - `isExact`: Boolean indicating if bid was met exactly
 - `breakdown`: Object with detailed breakdown and human-readable message
@@ -199,9 +198,9 @@ All acceptance criteria are covered with explicit test cases.
 
 ### Example 1: Standard Non-Zero Bid (Exact)
 ```javascript
-calculateRoundScore(5, 5, 1)
+calculateRoundScore(5, 5, 1, 10)
 // Result: baseScore=100, bonusScore=10, totalScore=110
-// Explanation: Bid exactly 5 tricks, got 5 → (20 × 5) + (10 × 1) = +110
+// Explanation: Bid exactly 5 tricks, got 5 → (20 × 5) + 10 (player bonus) = +110
 ```
 
 ### Example 2: Missed Non-Zero Bid
