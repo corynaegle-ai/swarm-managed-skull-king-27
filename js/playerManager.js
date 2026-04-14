@@ -1,5 +1,135 @@
 import { getCurrentRound } from './gameState.js';
 
+let players = [];
+let playerIdCounter = 1;
+
+/**
+ * Add a new player to the game
+ * @param {string} name - Player name
+ * @returns {object} Player object with id, name, scores array, and totalScore
+ * @throws {Error} if name is invalid or duplicate
+ */
+export function addPlayer(name) {
+  // Validate input
+  if (typeof name !== 'string') {
+    throw new Error('Player name must be a string');
+  }
+  
+  const trimmedName = name.trim();
+  
+  if (trimmedName === '') {
+    throw new Error('Player name cannot be empty or whitespace-only');
+  }
+  
+  // Check for duplicate names (case-insensitive)
+  if (players.some(p => p.name.toLowerCase() === trimmedName.toLowerCase())) {
+    throw new Error('Player name already exists');
+  }
+  
+  const player = {
+    id: playerIdCounter++,
+    name: trimmedName,
+    scores: [],
+    totalScore: 0
+  };
+  
+  players.push(player);
+  return { ...player };
+}
+
+/**
+ * Remove a player by ID
+ * @param {number} id - Player ID
+ * @returns {boolean} true if removed, false if not found
+ * @throws {Error} if ID is invalid
+ */
+export function removePlayer(id) {
+  // Validate input
+  if (typeof id !== 'number' || id <= 0 || !Number.isInteger(id)) {
+    throw new Error('Player ID must be a positive integer');
+  }
+  
+  const initialLength = players.length;
+  players = players.filter(p => p.id !== id);
+  
+  return players.length < initialLength;
+}
+
+/**
+ * Update player score for current round
+ * @param {number} playerId - Player ID
+ * @param {number} roundScore - Score for this round
+ * @returns {object} Updated player object
+ * @throws {Error} if player not found or score is invalid
+ */
+export function updatePlayerScore(playerId, roundScore) {
+  // Validate score
+  if (typeof roundScore !== 'number' || !isFinite(roundScore)) {
+    throw new Error('Score must be a finite number');
+  }
+  
+  const player = players.find(p => p.id === playerId);
+  
+  if (!player) {
+    throw new Error('Player not found');
+  }
+  
+  const currentRound = getCurrentRound();
+  player.scores[currentRound - 1] = roundScore;
+  player.totalScore = player.scores.reduce((sum, score) => sum + score, 0);
+  
+  return { ...player };
+}
+
+/**
+ * Get a player by ID
+ * @param {number} id - Player ID
+ * @returns {object|null} Player object or null if not found
+ * @throws {Error} if ID is invalid
+ */
+export function getPlayer(id) {
+  // Validate input
+  if (typeof id !== 'number' || id <= 0 || !Number.isInteger(id)) {
+    throw new Error('Player ID must be a positive integer');
+  }
+  
+  const player = players.find(p => p.id === id);
+  return player ? { ...player } : null;
+}
+
+/**
+ * Get all players
+ * @returns {array} Array of all player objects
+ */
+export function getAllPlayers() {
+  return players.map(p => ({ ...p }));
+}
+
+/**
+ * Calculate final scores and return sorted by total score (descending)
+ * @returns {array} Players sorted by total score in descending order
+ */
+export function calculateFinalScores() {
+  return players
+    .map(p => ({ ...p }))
+    .sort((a, b) => b.totalScore - a.totalScore);
+}
+
+/**
+ * Clear all players from the game
+ */
+export function clearAllPlayers() {
+  players = [];
+}
+
+/**
+ * Reset the player ID counter
+ */
+export function resetPlayerIdCounter() {
+  playerIdCounter = 1;
+}
+import { getCurrentRound } from './gameState.js';
+
 // In-memory player storage
 let players = [];
 let playerIdCounter = 1;
