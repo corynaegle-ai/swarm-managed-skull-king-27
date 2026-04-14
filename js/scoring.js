@@ -1,18 +1,18 @@
 /**
- * Scoring module for Skull King card game
- * Implements the core scoring rules and calculations
+ * Skull King Scoring Module
+ * Implements core scoring calculation functions following Skull King game rules
  */
 
 /**
- * Calculate the score for a single round
+ * Calculates the score for a single round based on bid and tricks won
  * 
- * Scoring Rules:
- * - Non-zero bid: +20 points per trick if bid is exact, -10 points per difference if not exact
- * - Zero bid: +10 × handNumber points if exact (0 tricks taken), -10 × handNumber if any tricks taken
+ * Skull King Scoring Rules:
+ * - For non-zero bids: +20 per trick if exact match, -10 per difference if not exact
+ * - For zero bids: +10×handNumber if exact (no tricks taken), -10×handNumber if any tricks taken
  * 
- * @param {number} bid - The bid made by the player (0 or higher)
- * @param {number} tricksWon - The number of tricks actually won
- * @param {number} handNumber - The hand number (round number, typically 1-13)
+ * @param {number} bid - The number of tricks the player bid (0 or positive integer)
+ * @param {number} tricksWon - The number of tricks actually won (0 or positive integer)
+ * @param {number} handNumber - The current hand/round number (1 or positive integer)
  * @returns {number} The score for this round
  * @throws {Error} If parameters are invalid
  */
@@ -21,38 +21,37 @@ function calculateRoundScore(bid, tricksWon, handNumber) {
   if (typeof bid !== 'number' || typeof tricksWon !== 'number' || typeof handNumber !== 'number') {
     throw new Error('All parameters must be numbers');
   }
-
+  
   if (!Number.isInteger(bid) || !Number.isInteger(tricksWon) || !Number.isInteger(handNumber)) {
     throw new Error('All parameters must be integers');
   }
-
+  
   if (bid < 0) {
     throw new Error('Bid cannot be negative');
   }
-
+  
   if (tricksWon < 0) {
     throw new Error('Tricks won cannot be negative');
   }
-
+  
   if (handNumber <= 0) {
     throw new Error('Hand number must be positive');
   }
-
+  
   // Zero bid scoring
   if (bid === 0) {
-    // Zero bid is exact if no tricks were taken
     if (tricksWon === 0) {
-      // Exact: +10 × handNumber
+      // Exact match: +10 per hand number
       return 10 * handNumber;
     } else {
-      // Not exact: -10 × handNumber
+      // Did not match: -10 per hand number
       return -10 * handNumber;
     }
   }
-
+  
   // Non-zero bid scoring
   if (bid === tricksWon) {
-    // Exact bid: +20 per trick
+    // Exact match: +20 per trick
     return 20 * bid;
   } else {
     // Not exact: -10 per difference
@@ -62,34 +61,33 @@ function calculateRoundScore(bid, tricksWon, handNumber) {
 }
 
 /**
- * Calculate the total score from all rounds
+ * Calculates the total score by summing all round scores
  * 
- * @param {number[]} playerScores - Array of scores from each round
- * @returns {number} The sum of all round scores
- * @throws {Error} If input is invalid
+ * @param {Array<number>} playerScores - Array of individual round scores
+ * @returns {number} The total score across all rounds
+ * @throws {Error} If playerScores is not a valid array of numbers
  */
 function calculateTotalScore(playerScores) {
   // Input validation
   if (!Array.isArray(playerScores)) {
     throw new Error('playerScores must be an array');
   }
-
+  
   if (playerScores.length === 0) {
     return 0;
   }
-
-  // Validate all elements are numbers
+  
   for (let i = 0; i < playerScores.length; i++) {
-    if (typeof playerScores[i] !== 'number') {
-      throw new Error(`Element at index ${i} is not a number`);
+    if (typeof playerScores[i] !== 'number' || !Number.isInteger(playerScores[i])) {
+      throw new Error(`playerScores[${i}] must be an integer`);
     }
   }
-
+  
   // Sum all scores
   return playerScores.reduce((total, score) => total + score, 0);
 }
 
-// Export functions for use in other modules
+// Export functions for use by game engine
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     calculateRoundScore,

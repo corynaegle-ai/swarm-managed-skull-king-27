@@ -1,233 +1,154 @@
 /**
  * Test suite for scoring.js
- * Tests all scoring calculations and edge cases
+ * Tests all scoring calculation functions
  */
 
-// Import functions (for Node.js environment)
-const { calculateRoundScore, calculateTotalScore } = typeof require !== 'undefined' ? require('./scoring.js') : {};
+// Import functions (works in Node.js with module.exports)
+const { calculateRoundScore, calculateTotalScore } = typeof require !== 'undefined' ? require('./scoring') : window;
 
 // Test helper
 function assert(condition, message) {
   if (!condition) {
-    throw new Error(`Assertion failed: ${message}`);
+    console.error('❌ TEST FAILED:', message);
+    throw new Error(message);
+  }
+  console.log('✓', message);
+}
+
+function testCalculateRoundScore() {
+  console.log('\n=== Testing calculateRoundScore ===');
+  
+  // Non-zero bid tests - exact match
+  assert(calculateRoundScore(3, 3, 1) === 60, 'Non-zero bid exact match (3 tricks): 20×3 = 60');
+  assert(calculateRoundScore(1, 1, 1) === 20, 'Non-zero bid exact match (1 trick): 20×1 = 20');
+  assert(calculateRoundScore(5, 5, 3) === 100, 'Non-zero bid exact match (5 tricks): 20×5 = 100');
+  
+  // Non-zero bid tests - not exact
+  assert(calculateRoundScore(3, 2, 1) === -10, 'Non-zero bid off by 1: -10×1 = -10');
+  assert(calculateRoundScore(3, 5, 1) === -20, 'Non-zero bid off by 2: -10×2 = -20');
+  assert(calculateRoundScore(4, 1, 1) === -30, 'Non-zero bid off by 3: -10×3 = -30');
+  assert(calculateRoundScore(2, 0, 1) === -20, 'Non-zero bid (2) vs 0 tricks: -10×2 = -20');
+  
+  // Zero bid tests - exact (no tricks)
+  assert(calculateRoundScore(0, 0, 1) === 10, 'Zero bid exact at hand 1: 10×1 = 10');
+  assert(calculateRoundScore(0, 0, 5) === 50, 'Zero bid exact at hand 5: 10×5 = 50');
+  assert(calculateRoundScore(0, 0, 8) === 80, 'Zero bid exact at hand 8: 10×8 = 80');
+  
+  // Zero bid tests - not exact (took tricks)
+  assert(calculateRoundScore(0, 1, 1) === -10, 'Zero bid took 1 trick at hand 1: -10×1 = -10');
+  assert(calculateRoundScore(0, 3, 2) === -20, 'Zero bid took 3 tricks at hand 2: -10×2 = -20');
+  assert(calculateRoundScore(0, 5, 4) === -40, 'Zero bid took 5 tricks at hand 4: -10×4 = -40');
+  
+  // Edge cases
+  assert(calculateRoundScore(0, 0, 10) === 100, 'Zero bid at high hand number: 10×10 = 100');
+  assert(calculateRoundScore(8, 8, 1) === 160, 'High non-zero bid exact match: 20×8 = 160');
+}
+
+function testCalculateTotalScore() {
+  console.log('\n=== Testing calculateTotalScore ===');
+  
+  // Basic summation
+  assert(calculateTotalScore([10, 20, 30]) === 60, 'Sum of [10, 20, 30] = 60');
+  assert(calculateTotalScore([60, -10, 50]) === 100, 'Sum with negative: [60, -10, 50] = 100');
+  
+  // Single score
+  assert(calculateTotalScore([50]) === 50, 'Single score: [50] = 50');
+  
+  // All zeros
+  assert(calculateTotalScore([0, 0, 0]) === 0, 'All zeros: [0, 0, 0] = 0');
+  
+  // Negative scores
+  assert(calculateTotalScore([-10, -20, -5]) === -35, 'All negative: [-10, -20, -5] = -35');
+  
+  // Mixed scores from actual game scenarios
+  const gameScores = [
+    calculateRoundScore(0, 0, 1),  // 10
+    calculateRoundScore(1, 1, 2),  // 20
+    calculateRoundScore(2, 1, 3),  // -10
+    calculateRoundScore(0, 2, 4)   // -40
+  ];
+  assert(calculateTotalScore(gameScores) === -20, 'Mixed game scores sum correctly');
+  
+  // Empty array
+  assert(calculateTotalScore([]) === 0, 'Empty array returns 0');
+}
+
+function testInputValidation() {
+  console.log('\n=== Testing Input Validation ===');
+  
+  // calculateRoundScore validation
+  try {
+    calculateRoundScore('3', 3, 1);
+    throw new Error('Should have thrown for non-number bid');
+  } catch (e) {
+    assert(e.message === 'All parameters must be numbers', 'Rejects non-number bid');
+  }
+  
+  try {
+    calculateRoundScore(3.5, 3, 1);
+    throw new Error('Should have thrown for non-integer bid');
+  } catch (e) {
+    assert(e.message === 'All parameters must be integers', 'Rejects non-integer bid');
+  }
+  
+  try {
+    calculateRoundScore(-1, 3, 1);
+    throw new Error('Should have thrown for negative bid');
+  } catch (e) {
+    assert(e.message === 'Bid cannot be negative', 'Rejects negative bid');
+  }
+  
+  try {
+    calculateRoundScore(3, -1, 1);
+    throw new Error('Should have thrown for negative tricks won');
+  } catch (e) {
+    assert(e.message === 'Tricks won cannot be negative', 'Rejects negative tricks won');
+  }
+  
+  try {
+    calculateRoundScore(3, 3, 0);
+    throw new Error('Should have thrown for hand number <= 0');
+  } catch (e) {
+    assert(e.message === 'Hand number must be positive', 'Rejects non-positive hand number');
+  }
+  
+  try {
+    calculateRoundScore(3, 3, -1);
+    throw new Error('Should have thrown for negative hand number');
+  } catch (e) {
+    assert(e.message === 'Hand number must be positive', 'Rejects negative hand number');
+  }
+  
+  // calculateTotalScore validation
+  try {
+    calculateTotalScore('not an array');
+    throw new Error('Should have thrown for non-array');
+  } catch (e) {
+    assert(e.message === 'playerScores must be an array', 'Rejects non-array input');
+  }
+  
+  try {
+    calculateTotalScore([10, 'twenty', 30]);
+    throw new Error('Should have thrown for non-number in array');
+  } catch (e) {
+    assert(e.message.includes('must be an integer'), 'Rejects non-number in array');
+  }
+  
+  try {
+    calculateTotalScore([10, 20.5, 30]);
+    throw new Error('Should have thrown for non-integer in array');
+  } catch (e) {
+    assert(e.message.includes('must be an integer'), 'Rejects non-integer in array');
   }
 }
 
-// Test suite
-console.log('Running Scoring Tests...');
-
-// ============================================================
-// Test: calculateRoundScore - Non-zero bid, exact match
-// ============================================================
-console.log('\nTest 1: Non-zero bid, exact match');
-let score = calculateRoundScore(3, 3, 5);
-assert(score === 60, `Expected 60 (3 tricks × 20), got ${score}`);
-console.log('✓ PASSED: Non-zero bid exact match gives +20 per trick');
-
-// ============================================================
-// Test: calculateRoundScore - Non-zero bid, under bid
-// ============================================================
-console.log('\nTest 2: Non-zero bid, under bid');
-score = calculateRoundScore(5, 3, 5);
-assert(score === -20, `Expected -20 (2 trick difference × -10), got ${score}`);
-console.log('✓ PASSED: Non-zero bid under by 2 gives -20');
-
-// ============================================================
-// Test: calculateRoundScore - Non-zero bid, over bid
-// ============================================================
-console.log('\nTest 3: Non-zero bid, over bid');
-score = calculateRoundScore(2, 4, 5);
-assert(score === -20, `Expected -20 (2 trick difference × -10), got ${score}`);
-console.log('✓ PASSED: Non-zero bid over by 2 gives -20');
-
-// ============================================================
-// Test: calculateRoundScore - Zero bid, exact (0 tricks)
-// ============================================================
-console.log('\nTest 4: Zero bid, exact match');
-score = calculateRoundScore(0, 0, 3);
-assert(score === 30, `Expected 30 (10 × 3 hand), got ${score}`);
-console.log('✓ PASSED: Zero bid exact gives +10 × handNumber');
-
-// ============================================================
-// Test: calculateRoundScore - Zero bid, not exact (1 trick)
-// ============================================================
-console.log('\nTest 5: Zero bid, not exact');
-score = calculateRoundScore(0, 1, 3);
-assert(score === -30, `Expected -30 (-10 × 3 hand), got ${score}`);
-console.log('✓ PASSED: Zero bid with 1 trick gives -10 × handNumber');
-
-// ============================================================
-// Test: calculateRoundScore - Zero bid, multiple tricks
-// ============================================================
-console.log('\nTest 6: Zero bid, multiple tricks');
-score = calculateRoundScore(0, 5, 7);
-assert(score === -70, `Expected -70 (-10 × 7 hand), got ${score}`);
-console.log('✓ PASSED: Zero bid with multiple tricks gives -10 × handNumber');
-
-// ============================================================
-// Test: calculateRoundScore - Single trick bid
-// ============================================================
-console.log('\nTest 7: Single trick bid, exact');
-score = calculateRoundScore(1, 1, 1);
-assert(score === 20, `Expected 20, got ${score}`);
-console.log('✓ PASSED: Single trick exact bid gives 20');
-
-// ============================================================
-// Test: calculateRoundScore - Hand number variations
-// ============================================================
-console.log('\nTest 8: Zero bid with hand number 1');
-score = calculateRoundScore(0, 0, 1);
-assert(score === 10, `Expected 10, got ${score}`);
-console.log('✓ PASSED: Zero bid hand 1 gives 10');
-
-console.log('\nTest 9: Zero bid with hand number 13');
-score = calculateRoundScore(0, 0, 13);
-assert(score === 130, `Expected 130, got ${score}`);
-console.log('✓ PASSED: Zero bid hand 13 gives 130');
-
-// ============================================================
-// Test: calculateRoundScore - Edge case: off by 1
-// ============================================================
-console.log('\nTest 10: Non-zero bid off by 1');
-score = calculateRoundScore(5, 4, 5);
-assert(score === -10, `Expected -10, got ${score}`);
-console.log('✓ PASSED: Off by 1 trick gives -10');
-
-// ============================================================
-// Test: calculateRoundScore - Error handling: negative bid
-// ============================================================
-console.log('\nTest 11: Error handling - negative bid');
+// Run all tests
 try {
-  calculateRoundScore(-1, 2, 5);
-  throw new Error('Should have thrown an error for negative bid');
-} catch (e) {
-  assert(e.message === 'Bid cannot be negative', `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Negative bid throws appropriate error');
+  testCalculateRoundScore();
+  testCalculateTotalScore();
+  testInputValidation();
+  console.log('\n✅ All tests passed!');
+} catch (error) {
+  console.error('\n❌ Test suite failed:', error.message);
+  process.exit(1);
 }
-
-// ============================================================
-// Test: calculateRoundScore - Error handling: negative tricks
-// ============================================================
-console.log('\nTest 12: Error handling - negative tricks');
-try {
-  calculateRoundScore(3, -1, 5);
-  throw new Error('Should have thrown an error for negative tricks');
-} catch (e) {
-  assert(e.message === 'Tricks won cannot be negative', `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Negative tricks throws appropriate error');
-}
-
-// ============================================================
-// Test: calculateRoundScore - Error handling: negative hand number
-// ============================================================
-console.log('\nTest 13: Error handling - negative hand number');
-try {
-  calculateRoundScore(3, 2, -1);
-  throw new Error('Should have thrown an error for negative hand number');
-} catch (e) {
-  assert(e.message === 'Hand number must be positive', `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Negative hand number throws appropriate error');
-}
-
-// ============================================================
-// Test: calculateRoundScore - Error handling: zero hand number
-// ============================================================
-console.log('\nTest 14: Error handling - zero hand number');
-try {
-  calculateRoundScore(3, 2, 0);
-  throw new Error('Should have thrown an error for zero hand number');
-} catch (e) {
-  assert(e.message === 'Hand number must be positive', `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Zero hand number throws appropriate error');
-}
-
-// ============================================================
-// Test: calculateRoundScore - Error handling: non-integer parameters
-// ============================================================
-console.log('\nTest 15: Error handling - non-integer parameters');
-try {
-  calculateRoundScore(3.5, 2, 5);
-  throw new Error('Should have thrown an error for non-integer bid');
-} catch (e) {
-  assert(e.message === 'All parameters must be integers', `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Non-integer bid throws appropriate error');
-}
-
-// ============================================================
-// Test: calculateTotalScore - Multiple scores
-// ============================================================
-console.log('\nTest 16: calculateTotalScore with multiple scores');
-let total = calculateTotalScore([20, 30, -10, 40]);
-assert(total === 80, `Expected 80, got ${total}`);
-console.log('✓ PASSED: calculateTotalScore sums correctly');
-
-// ============================================================
-// Test: calculateTotalScore - Single score
-// ============================================================
-console.log('\nTest 17: calculateTotalScore with single score');
-total = calculateTotalScore([50]);
-assert(total === 50, `Expected 50, got ${total}`);
-console.log('✓ PASSED: Single score sums to itself');
-
-// ============================================================
-// Test: calculateTotalScore - All negative scores
-// ============================================================
-console.log('\nTest 18: calculateTotalScore with negative scores');
-total = calculateTotalScore([-10, -20, -30]);
-assert(total === -60, `Expected -60, got ${total}`);
-console.log('✓ PASSED: Negative scores sum correctly');
-
-// ============================================================
-// Test: calculateTotalScore - Empty array
-// ============================================================
-console.log('\nTest 19: calculateTotalScore with empty array');
-total = calculateTotalScore([]);
-assert(total === 0, `Expected 0, got ${total}`);
-console.log('✓ PASSED: Empty array returns 0');
-
-// ============================================================
-// Test: calculateTotalScore - Error handling: not an array
-// ============================================================
-console.log('\nTest 20: Error handling - calculateTotalScore with non-array');
-try {
-  calculateTotalScore("not an array");
-  throw new Error('Should have thrown an error for non-array input');
-} catch (e) {
-  assert(e.message === 'playerScores must be an array', `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Non-array input throws appropriate error');
-}
-
-// ============================================================
-// Test: calculateTotalScore - Error handling: non-numeric element
-// ============================================================
-console.log('\nTest 21: Error handling - calculateTotalScore with non-numeric element');
-try {
-  calculateTotalScore([10, 20, "invalid"]);
-  throw new Error('Should have thrown an error for non-numeric element');
-} catch (e) {
-  assert(e.message.includes('not a number'), `Unexpected error: ${e.message}`);
-  console.log('✓ PASSED: Non-numeric element throws appropriate error');
-}
-
-// ============================================================
-// Integration test: realistic game scenario
-// ============================================================
-console.log('\nTest 22: Integration test - realistic game scenario');
-const roundScores = [
-  calculateRoundScore(2, 2, 1),  // Exact: +40
-  calculateRoundScore(1, 0, 2),  // Missed: -10
-  calculateRoundScore(0, 0, 3),  // Zero exact: +30
-  calculateRoundScore(3, 4, 4)   // Over by 1: -10
-];
-assert(roundScores[0] === 40, `Round 1 should be 40, got ${roundScores[0]}`);
-assert(roundScores[1] === -10, `Round 2 should be -10, got ${roundScores[1]}`);
-assert(roundScores[2] === 30, `Round 3 should be 30, got ${roundScores[2]}`);
-assert(roundScores[3] === -10, `Round 4 should be -10, got ${roundScores[3]}`);
-
-const gameTotal = calculateTotalScore(roundScores);
-assert(gameTotal === 50, `Game total should be 50, got ${gameTotal}`);
-console.log('✓ PASSED: Realistic game scenario calculates correctly');
-
-console.log('\n' + '='.repeat(50));
-console.log('ALL TESTS PASSED!');
-console.log('='.repeat(50));
