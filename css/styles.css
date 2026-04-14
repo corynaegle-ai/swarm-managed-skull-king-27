@@ -1,0 +1,283 @@
+/* ============================= */
+/* Global Styles                  */
+/* ============================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ============================= */
+/* Header Styles                  */
+/* ============================= */
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px 20px;
+  text-align: center;
+  border-bottom: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.game-status {
+  font-size: 1rem;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+/* ============================= */
+/* Main Content Styles           */
+/* ============================= */
+
+.app-main {
+  flex: 1;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ============================= */
+/* Bid Phase Container Styles    */
+/* ============================= */
+
+.bid-phase-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Bid Info Section */
+.bid-info-section {
+  background: #f8f9fa;
+  border-left: 5px solid #667eea;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bid-round-info h2 {
+  font-size: 2rem;
+  color: #667eea;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.bid-round-info p {
+  font-size: 1.1rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.hand-count-value {
+  font-weight: 700;
+  color: #764ba2;
+  font-size: 1.3rem;
+}
+
+/* Bid Players Section */
+.bid-players-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
+}
+
+.player-bid-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.player-bid-input.empty {
+  border-color: #ffd700;
+  background-color: #fffbf0;
+}
+
+.player-bid-input.invalid {
+  border-color: #ff6b6b;
+  background-color: #fff5f5;
+}
+
+.player-bid-input.valid {
+  border-color: #51cf66;
+  background-color: #f0fdf4;
+}
+
+.bid-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.bid-input-field {
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.bid-input-field:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.bid-input-field:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
+  color: #999;
+}
+
+.bid-feedback {
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-height: 20px;
+}
+
+.player-bid-input.empty .bid-feedback {
+  color: #ffa500;
+}
+
+.player-bid-input.invalid .bid-feedback {
+  color: #ff6b6b;
+}
+
+.player-bid-input.valid .bid-feedback {
+  color: #51cf66;
+}
+
+/* Bid Controls Section */
+.bid-controls-section {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  padding-top: 20px;
+}
+
+.bid-button {
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bid-proceed-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.bid-proceed-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.bid-proceed-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.bid-proceed-btn:disabled {
+  background: #ccc;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.bid-reset-btn {
+  background: #f0f0f0;
+  color: #333;
+  border: 2px solid #ddd;
+}
+
+.bid-reset-btn:hover {
+  background: #e8e8e8;
+  border-color: #999;
+  transform: translateY(-2px);
+}
+
+.bid-reset-btn:active {
+  transform: translateY(0);
+}
+
+/* ============================= */
+/* Footer Styles                  */
+/* ============================= */
+
+.app-footer {
+  background: #f8f9fa;
+  padding: 20px;
+  text-align: center;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* ============================= */
+/* Responsive Design             */
+/* ============================= */
+
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .bid-round-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .bid-round-info p {
+    font-size: 1rem;
+  }
+
+  .bid-controls-section {
+    flex-direction: column;
+  }
+
+  .bid-button {
+    width: 100%;
+  }
+
+  .app-main {
+    padding: 20px 15px;
+  }
+}
