@@ -1,94 +1,66 @@
-export interface BidValidationResult {
-  isValid: boolean;
-  error?: string;
-}
-
-export interface Bid {
-  playerId: string;
-  playerName: string;
-  bidAmount: number;
-  round: number;
-}
-
+/**
+ * BidService manages bid collection and validation for the Skull King game.
+ * Tracks bids for each player and validates against hand count constraints.
+ */
 export class BidService {
+  private bids: Map<string, number> = new Map();
+
   /**
-   * Validates a bid against the maximum allowed hands in the current round
-   * @param bidAmount The bid amount to validate
-   * @param handCount The maximum number of hands available (equals round number)
-   * @returns Validation result with error message if invalid
+   * Set a bid for a player.
+   * @param playerId - The ID of the player
+   * @param bid - The bid amount (0 to hand_count inclusive)
    */
-  validateBid(bidAmount: number, handCount: number): BidValidationResult {
-    // Check if bid is a valid number
-    if (isNaN(bidAmount) || bidAmount < 0) {
-      return {
-        isValid: false,
-        error: 'Bid must be a non-negative number',
-      };
+  setBid(playerId: string, bid: number): void {
+    if (typeof bid !== 'number' || bid < 0) {
+      throw new Error('Bid must be a non-negative number');
     }
-
-    // Check if bid exceeds hand count
-    if (bidAmount > handCount) {
-      return {
-        isValid: false,
-        error: `Bid cannot exceed ${handCount} hands`,
-      };
-    }
-
-    return {
-      isValid: true,
-    };
+    this.bids.set(playerId, bid);
   }
 
   /**
-   * Checks if a bid value has been set (not the default 0)
-   * @param bidAmount The bid amount to check
-   * @returns True if the bid has been explicitly set
+   * Get a player's bid.
+   * @param playerId - The ID of the player
+   * @returns The bid amount, or undefined if not set
    */
-  isBidSet(bidAmount: number): boolean {
-    return bidAmount > 0;
+  getBid(playerId: string): number | undefined {
+    return this.bids.get(playerId);
   }
 
   /**
-   * Validates all bids for a round
-   * @param bids Map of player IDs to bid amounts
-   * @param handCount The maximum number of hands available
-   * @returns Validation result with error details
+   * Get all bids as a Map.
+   * @returns Map of playerId to bid amount
    */
-  validateAllBids(
-    bids: Map<string, number>,
-    handCount: number,
-  ): BidValidationResult {
-    const errors: string[] = [];
+  getBids(): Map<string, number> {
+    return new Map(this.bids);
+  }
 
-    bids.forEach((bidAmount, playerId) => {
-      const validation = this.validateBid(bidAmount, handCount);
-      if (!validation.isValid) {
-        errors.push(`Player ${playerId}: ${validation.error}`);
-      }
+  /**
+   * Check if all players have submitted bids.
+   * A bid is considered submitted if the player has a key in the bids Map.
+   * Valid bids are from 0 to hand_count (inclusive).
+   * @param playerIds - Array of all player IDs
+   * @returns true if every player has a bid set
+   */
+  allPlayersHaveBids(playerIds: string[]): boolean {
+    return playerIds.every(playerId => this.bids.has(playerId));
+  }
+
+  /**
+   * Reset all bids (for testing or round restart).
+   */
+  reset(): void {
+    this.bids.clear();
+  }
+
+  /**
+   * Get the total of all bids.
+   * @returns Sum of all bid amounts
+   */
+  getTotalBids(): number {
+    let total = 0;
+    this.bids.forEach(bid => {
+      total += bid;
     });
-
-    if (errors.length > 0) {
-      return {
-        isValid: false,
-        error: errors.join('; '),
-      };
-    }
-
-    return {
-      isValid: true,
-    };
-  }
-
-  /**
-   * Checks if all players have submitted bids
-   * @param bids Map of player IDs to bid amounts
-   * @param playerIds List of all player IDs that must have bids
-   * @returns True if all players have bids
-   */
-  allPlayersHaveBids(bids: Map<string, number>, playerIds: string[]): boolean {
-    return playerIds.every((playerId) => {
-      const bid = bids.get(playerId);
-      return bid !== undefined && bid > 0;
-    });
+    return total;
   }
 }

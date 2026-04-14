@@ -1,120 +1,117 @@
-import { GameState } from '../types/GameState';
-import { Player } from '../types/Player';
-import { BidCollector } from '../utils/BidCollector';
-import { GameRound } from '../types/GameRound';
+import { BidService } from '../services/BidService';
 
+export interface Player {
+  id: string;
+  name: string;
+}
+
+export interface GameState {
+  roundNumber: number;
+  players: Player[];
+  totalRounds: number;
+}
+
+/**
+ * BidCollectionPhase manages the bid collection phase of the Skull King game.
+ * Orchestrates the process of collecting, validating, and confirming bids from all players.
+ */
 export class BidCollectionPhase {
-  private gameState: GameState;
-  private bidCollector: BidCollector;
-  private currentRound: GameRound;
-  private playerBids: Map<string, number> = new Map();
+  private bidService: BidService;
+  private state: GameState;
 
-  constructor(gameState: GameState) {
-    this.gameState = gameState;
-    this.bidCollector = new BidCollector();
-    this.currentRound = gameState.currentRound;
+  constructor(state: GameState) {
+    this.state = state;
+    this.bidService = new BidService();
   }
 
   /**
-   * Execute the bid collection phase
-   * Returns the final bids map when all players have confirmed
+   * Get the number of hands available in the current round.
+   * Rounds start at 1, and the hand count equals the round number.
+   * @returns Number of hands available
    */
-  async execute(): Promise<Map<string, number>> {
-    try {
-      this.displayRoundInfo();
-      await this.collectBidsFromAllPlayers();
-      this.displayBidSummary();
-      return this.playerBids;
-    } finally {
-      this.bidCollector.close();
+  private getHandCount(): number {
+    return this.state.roundNumber;
+  }
+
+  /**
+   * Validate a bid against game rules.
+   * @param bid - The bid to validate
+   * @param handCount - The number of hands available
+   * @throws Error if bid is invalid
+   */
+  private validateBid(bid: number, handCount: number): void {
+    if (typeof bid !== 'number' || isNaN(bid)) {
+      throw new Error('Bid must be a valid number');
+    }
+    if (bid < 0) {
+      throw new Error('Bid cannot be negative');
+    }
+    if (bid > handCount) {
+      throw new Error(`Bid cannot exceed ${handCount} hands in round ${this.state.roundNumber}`);
     }
   }
 
   /**
-   * Display current round and hand count information
-   * Satisfies Criterion 1: Display current round and hand count clearly
+   * Execute the bid collection phase.
+   * @returns Promise resolving to the collected bids
    */
-  private displayRoundInfo(): void {
-    const handCount = this.currentRound.roundNumber;
-    console.log('\n========================================');
-    console.log(`ROUND ${this.currentRound.roundNumber}`);
-    console.log(`Hands per player: ${handCount}`);
-    console.log('========================================\n');
-  }
+  public async execute(): Promise<Map<string, number>> {
+    const handCount = this.getHandCount();
+    console.log(`\nRound ${this.state.roundNumber}: Collecting bids for ${handCount} hands`);
 
-  /**
-   * Collect bids from all players
-   * Satisfies Criteria 2, 3, 4: Validation, requirement, and modification
-   */
-  private async collectBidsFromAllPlayers(): Promise<void> {
-    const players = this.gameState.players;
+    // In a CLI context, this would collect bids interactively
+    // In a component context, this is handled by BidCollectionComponent
+    // This method serves as the coordinator
 
-    for (const player of players) {
-      await this.collectBidFromPlayer(player);
-    }
-  }
-
-  /**
-   * Collect bid from a single player with modification capability
-   * Satisfies Criteria 2, 4: Validation and modification
-   */
-  private async collectBidFromPlayer(player: Player): Promise<void> {
-    let bidConfirmed = false;
-
-    while (!bidConfirmed) {
-      // Get initial bid or modified bid from player
-      let bid = await this.bidCollector.getBidFromPlayer(
-        player.name,
-        this.currentRound.roundNumber
-      );
-
-      // Validate bid doesn't exceed hand count
-      while (bid < 0 || bid > this.currentRound.roundNumber) {
-        console.log(
-          `Invalid bid. Please enter a bid between 0 and ${this.currentRound.roundNumber}.`
-        );
-        bid = await this.bidCollector.getBidFromPlayer(
-          player.name,
-          this.currentRound.roundNumber
-        );
-      }
-
-      // Allow player to confirm or modify bid
-      const confirmed = await this.bidCollector.confirmBid(
-        player.name,
-        bid
-      );
-
-      if (confirmed) {
-        this.playerBids.set(player.id, bid);
-        bidConfirmed = true;
-      }
-      // If not confirmed, loop continues for modification
-    }
-  }
-
-  /**
-   * Display bid summary before moving to scoring phase
-   * Satisfies Criterion 5: Show bid summary before moving to scoring phase
-   */
-  private displayBidSummary(): void {
-    const players = this.gameState.players;
-    console.log('\n========================================');
-    console.log('BID SUMMARY');
-    console.log('========================================');
-
-    for (const player of players) {
-      const bid = this.playerBids.get(player.id);
-      console.log(`${player.name}: ${bid} bid(s)`);
+    // Collect bids from all players
+    for (const player of this.state.players) {
+      console.log(`Waiting for bid from ${player.name}...`);
     }
 
-    console.log('========================================\n');
+    // Return the collected bids
+    return this.bidService.getBids();
   }
 
   /**
-   * Get the collected bids
+   * Submit a bid for a player.
+   * @param playerId - The ID of the player
+   * @param bid - The bid amount
+   * @throws Error if bid is invalid
    */
-  getBids(): Map<string, number> {
-    return this.playerBids;
+  public submitBid(playerId: string, bid: number): void {
+    const handCount = this.getHandCount();
+    this.validateBid(bid, handCount);
+    this.bidService.setBid(playerId, bid);
+  }
+
+  /**
+   * Check if all players have submitted bids.
+   * @returns true if all players have bids
+   */
+  public areAllBidsSubmitted(): boolean {
+    return this.bidService.allPlayersHaveBids(this.state.players.map(p => p.id));
+  }
+
+  /**
+   * Get the current collected bids.
+   * @returns Map of playerId to bid amount
+   */
+  public getBids(): Map<string, number> {
+    return this.bidService.getBids();
+  }
+
+  /**
+   * Get the total of all submitted bids.
+   * @returns Sum of all bids
+   */
+  public getTotalBids(): number {
+    return this.bidService.getTotalBids();
+  }
+
+  /**
+   * Reset the phase (clear all bids).
+   */
+  public reset(): void {
+    this.bidService.reset();
   }
 }

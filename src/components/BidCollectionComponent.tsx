@@ -1,188 +1,174 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BidService } from '../services/BidService';
-import { Player, Bid } from '../types';
-import './BidCollectionComponent.css';
+import { BidInputPanel } from './BidInputPanel';
+import { BidSummary } from './BidSummary';
 
-interface BidCollectionComponentProps {
-  players: Player[];
-  roundNumber: number;
-  onBidsConfirmed: (bids: Bid[]) => void;
+export interface Player {
+  id: string;
+  name: string;
 }
 
+export interface BidCollectionComponentProps {
+  round: number;
+  handCount: number;
+  players: Player[];
+  onBidsConfirmed: (bids: Map<string, number>) => void;
+}
+
+/**
+ * Component for collecting bids from all players at the start of each round.
+ * Ensures all players submit valid bids before proceeding.
+ */
 export const BidCollectionComponent: React.FC<BidCollectionComponentProps> = ({
+  round,
+  handCount,
   players,
-  roundNumber,
   onBidsConfirmed,
 }) => {
-  const handCount = roundNumber;
+  // Memoize BidService to avoid recreating on every render
+  const bidService = useMemo(() => new BidService(), []);
   const [bids, setBids] = useState<Map<string, number>>(new Map());
   const [showSummary, setShowSummary] = useState(false);
-  const [errors, setErrors] = useState<Map<string, string>>(new Map());
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
-  const bidService = new BidService();
+  /**
+   * Validate a bid against the hand count constraint.
+   * @param bid - The bid to validate
+   * @returns Error message if invalid, empty string if valid
+   */
+  const validateBid = (bid: number): string => {
+    if (typeof bid !== 'number' || isNaN(bid)) {
+      return 'Bid must be a valid number';
+    }
+    if (bid < 0) {
+      return 'Bid cannot be negative';
+    }
+    if (bid > handCount) {
+      return `Bid cannot exceed ${handCount} hands`;
+    }
+    return '';
+  };
 
-  // Initialize empty bids for all players
-  useEffect(() => {
-    const initialBids = new Map<string, number>();
-    players.forEach((player) => {
-      initialBids.set(player.id, 0);
-    });
-    setBids(initialBids);
-  }, [players, roundNumber]);
-
-  const handleBidChange = (playerId: string, value: string) => {
-    const numValue = value === '' ? 0 : parseInt(value, 10);
-    const newErrors = new Map(errors);
-
-    // Validate bid
-    const validation = bidService.validateBid(numValue, handCount);
-    if (!validation.isValid) {
-      newErrors.set(playerId, validation.error);
-    } else {
-      newErrors.delete(playerId);
+  /**
+   * Handle bid submission for a player.
+   * @param playerId - The ID of the player
+   * @param bidAmount - The bid amount
+   */
+  const handleBidSubmit = (playerId: string, bidAmount: number): void => {
+    const error = validateBid(bidAmount);
+    if (error) {
+      setErrorMessage(error);
+      return;
     }
 
+    bidService.setBid(playerId, bidAmount);
     const newBids = new Map(bids);
-    newBids.set(playerId, numValue);
+    newBids.set(playerId, bidAmount);
     setBids(newBids);
-    setErrors(newErrors);
+    setErrorMessage('');
   };
 
+  /**
+   * Check if all players have submitted bids.
+   * @returns true if all players have bids
+   */
   const allPlayersHaveBids = (): boolean => {
-    for (const player of players) {
-      if ((bids.get(player.id) ?? 0) === 0 && !bidService.isBidSet(bids.get(player.id) ?? 0)) {
-        return false;
-      }
+    return bidService.allPlayersHaveBids(players.map(p => p.id));
+  };
+
+  /**
+   * Handle the confirm bids action.
+   * First click shows summary, second click confirms and proceeds.
+   */
+  const handleConfirmBids = (): void => {
+    if (!allPlayersHaveBids()) {
+      setErrorMessage('All players must submit bids before proceeding');
+      return;
     }
-    return true;
-  };
 
-  const hasErrors = (): boolean => {
-    return errors.size > 0;
-  };
-
-  const handleConfirmBids = () => {
-    // Validate all bids before showing summary
-    const newErrors = new Map<string, string>();
-    let isValid = true;
-
-    players.forEach((player) => {
-      const bid = bids.get(player.id) ?? 0;
-      const validation = bidService.validateBid(bid, handCount);
-      if (!validation.isValid) {
-        newErrors.set(player.id, validation.error);
-        isValid = false;
-      }
-      // Check that bid is set (not 0)
-      if (bid === 0) {
-        newErrors.set(player.id, 'Bid is required');
-        isValid = false;
-      }
-    });
-
-    setErrors(newErrors);
-    if (isValid) {
+    if (!showSummary) {
       setShowSummary(true);
+      setErrorMessage('');
+      return;
     }
+
+    // Summary is confirmed, proceed to scoring
+    onBidsConfirmed(bidService.getBids());
   };
 
-  const handleModifyBids = () => {
-    setShowSummary(false);
+  /**
+   * Allow modification of bid after summary is shown.
+   * @param playerId - The ID of the player
+   * @param newBid - The new bid amount
+   */
+  const modifyBid = (playerId: string, newBid: number): void => {
+    if (!showSummary) {
+      return;
+    }
+
+    const error = validateBid(newBid);
+    if (error) {
+      setErrorMessage(error);
+      return;
+    }
+
+    bidService.setBid(playerId, newBid);
+    const newBids = new Map(bids);
+    newBids.set(playerId, newBid);
+    setBids(newBids);
+    setErrorMessage('');
   };
 
-  const handleConfirmSummary = () => {
-    const bidsList: Bid[] = players.map((player) => ({
-      playerId: player.id,
-      playerName: player.name,
-      bidAmount: bids.get(player.id) ?? 0,
-      round: roundNumber,
-    }));
-    onBidsConfirmed(bidsList);
+  /**
+   * Handle summary confirmation and proceed.
+   */
+  const handleSummaryConfirm = (): void => {
+    onBidsConfirmed(bidService.getBids());
   };
 
   if (showSummary) {
     return (
-      <div className="bid-collection-container">
-        <div className="bid-summary">
-          <h2>Bid Summary - Round {roundNumber}</h2>
-          <div className="summary-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Player</th>
-                  <th>Bid</th>
-                </tr>
-              </thead>
-              <tbody>
-                {players.map((player) => (
-                  <tr key={player.id}>
-                    <td>{player.name}</td>
-                    <td>{bids.get(player.id) ?? 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="summary-info">
-            <p>Hands available: {handCount}</p>
-            <p>Total bids: {Array.from(bids.values()).reduce((a, b) => a + b, 0)}</p>
-          </div>
-          <div className="summary-actions">
-            <button onClick={handleModifyBids} className="btn-modify">
-              Modify Bids
-            </button>
-            <button onClick={handleConfirmSummary} className="btn-confirm">
-              Confirm & Proceed to Scoring
-            </button>
-          </div>
-        </div>
-      </div>
+      <BidSummary
+        bids={bids}
+        players={players}
+        onConfirm={handleSummaryConfirm}
+        onModifyBid={modifyBid}
+      />
     );
   }
 
   return (
     <div className="bid-collection-container">
       <div className="bid-header">
-        <h1>Bid Collection</h1>
-        <div className="round-info">
-          <p className="round-display">
-            <strong>Round {roundNumber}</strong>
-          </p>
-          <p className="hand-count">
-            <strong>Hands Available: {handCount}</strong>
-          </p>
-        </div>
+        <h2>Round {round} - {handCount} hands available</h2>
       </div>
 
-      <div className="bid-form">
-        <div className="players-bid-list">
-          {players.map((player) => (
-            <div key={player.id} className="player-bid-item">
-              <label htmlFor={`bid-${player.id}`}>{player.name}</label>
-              <input
-                id={`bid-${player.id}`}
-                type="number"
-                min="0"
-                max={handCount}
-                value={bids.get(player.id) ?? 0}
-                onChange={(e) => handleBidChange(player.id, e.target.value)}
-                className={errors.has(player.id) ? 'input-error' : ''}
-              />
-              {errors.has(player.id) && (
-                <span className="error-message">{errors.get(player.id)}</span>
-              )}
-            </div>
-          ))}
+      {errorMessage && (
+        <div className="error-message" data-testid="error-message">
+          {errorMessage}
         </div>
+      )}
+
+      <div className="bid-input-section">
+        {players.map(player => (
+          <BidInputPanel
+            key={player.id}
+            player={player}
+            currentBid={bids.get(player.id)}
+            handCount={handCount}
+            onBidSubmit={handleBidSubmit}
+            onValidationError={setErrorMessage}
+          />
+        ))}
       </div>
 
       <div className="bid-actions">
         <button
           onClick={handleConfirmBids}
-          disabled={hasErrors() || !allPlayersHaveBids()}
-          className="btn-confirm-bids"
+          disabled={!allPlayersHaveBids()}
+          data-testid="confirm-bids-button"
         >
-          Confirm All Bids
+          {allPlayersHaveBids() ? 'Confirm Bids' : 'Waiting for bids...'}
         </button>
       </div>
     </div>

@@ -1,14 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { BidCollectionComponent } from '../BidCollectionComponent';
-import { Player } from '../../types';
 
 describe('BidCollectionComponent', () => {
-  const mockPlayers: Player[] = [
-    { id: '1', name: 'Alice' },
-    { id: '2', name: 'Bob' },
-    { id: '3', name: 'Charlie' },
+  const mockPlayers = [
+    { id: 'player-1', name: 'Alice' },
+    { id: 'player-2', name: 'Bob' },
   ];
 
   const mockOnBidsConfirmed = jest.fn();
@@ -18,327 +15,386 @@ describe('BidCollectionComponent', () => {
   });
 
   describe('Criterion 1: Display current round and hand count clearly', () => {
-    it('should display the current round number clearly', () => {
+    it('should display round number and hand count', () => {
       render(
         <BidCollectionComponent
+          round={3}
+          handCount={3}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      expect(screen.getByText('Round 3')).toBeInTheDocument();
+      const header = screen.getByText('Round 3 - 3 hands available');
+      expect(header).toBeInTheDocument();
     });
 
-    it('should display hand count that equals round number', () => {
-      render(
+    it('should update display when round changes', () => {
+      const { rerender } = render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={5}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      expect(screen.getByText('Hands Available: 5')).toBeInTheDocument();
-    });
+      expect(screen.getByText('Round 2 - 2 hands available')).toBeInTheDocument();
 
-    it('should display hand count in bid summary', () => {
-      const { getByDisplayValue, getByText } = render(
+      rerender(
         <BidCollectionComponent
+          round={4}
+          handCount={4}
           players={mockPlayers}
-          roundNumber={2}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      // Enter bids
-      fireEvent.change(getByDisplayValue('0'), { target: { value: '1' } });
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      fireEvent.change(inputs[2], { target: { value: '0' } });
-
-      // Click confirm
-      fireEvent.click(getByText('Confirm All Bids'));
-
-      // Check summary displays hand count
-      waitFor(() => {
-        expect(screen.getByText('Hands available: 2')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Round 4 - 4 hands available')).toBeInTheDocument();
     });
   });
 
   describe('Criterion 2: Prevent bids exceeding hand count', () => {
-    it('should show error when bid exceeds hand count', async () => {
-      const { getByDisplayValue } = render(
+    it('should prevent bids greater than hand count', async () => {
+      render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={2}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      const input = getByDisplayValue('0');
-      await userEvent.clear(input);
-      await userEvent.type(input, '5');
+      const bidInput = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput, { target: { value: '5' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      expect(screen.getByText('Bid cannot exceed 2 hands')).toBeInTheDocument();
-    });
-
-    it('should not allow submitting bids that exceed hand count', async () => {
-      const { getByDisplayValue, getByText } = render(
-        <BidCollectionComponent
-          players={mockPlayers}
-          roundNumber={3}
-          onBidsConfirmed={mockOnBidsConfirmed}
-        />,
-      );
-
-      // Set one bid to exceed hand count
-      const input = getByDisplayValue('0');
-      await userEvent.clear(input);
-      await userEvent.type(input, '5');
-
-      // Confirm button should be disabled
-      const confirmBtn = getByText('Confirm All Bids');
-      expect(confirmBtn).toBeDisabled();
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toHaveTextContent('Bid cannot exceed 2 hands');
+      });
     });
 
     it('should accept bids equal to hand count', async () => {
-      const { getByDisplayValue, getByText } = render(
+      render(
         <BidCollectionComponent
+          round={3}
+          handCount={3}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      const inputs = screen.getAllByRole('spinbutton');
-      await userEvent.clear(inputs[0]);
-      await userEvent.type(inputs[0], '3');
-      await userEvent.clear(inputs[1]);
-      await userEvent.type(inputs[1], '0');
-      await userEvent.clear(inputs[2]);
-      await userEvent.type(inputs[2], '0');
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '3' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      // No error should be shown
-      expect(screen.queryByText(/Bid cannot exceed/)).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByTestId('error-message')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should prevent negative bids', async () => {
+      render(
+        <BidCollectionComponent
+          round={2}
+          handCount={2}
+          players={mockPlayers}
+          onBidsConfirmed={mockOnBidsConfirmed}
+        />
+      );
+
+      const bidInput = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput, { target: { value: '-1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
+
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toHaveTextContent('Bid cannot be negative');
+      });
     });
   });
 
   describe('Criterion 3: Require bid from every player before proceeding', () => {
-    it('should not allow confirmation if any player bid is 0', () => {
-      const { getByDisplayValue, getByText } = render(
+    it('should disable confirm button when no bids are submitted', () => {
+      render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      // Only set bids for 2 players
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      // Leave inputs[2] as 0
-
-      const confirmBtn = getByText('Confirm All Bids');
-      expect(confirmBtn).toBeDisabled();
+      const confirmButton = screen.getByTestId('confirm-bids-button') as HTMLButtonElement;
+      expect(confirmButton).toBeDisabled();
     });
 
-    it('should allow confirmation only when all players have non-zero bids', () => {
-      const { getByText } = render(
+    it('should allow confirmation when all players have bids including zero', async () => {
+      render(
         <BidCollectionComponent
+          round={3}
+          handCount={3}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      fireEvent.change(inputs[2], { target: { value: '1' } });
+      // Player 1 bids 0
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '0' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      const confirmBtn = getByText('Confirm All Bids');
-      expect(confirmBtn).not.toBeDisabled();
+      // Player 2 bids 2
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '2' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
+
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('confirm-bids-button') as HTMLButtonElement;
+        expect(confirmButton).not.toBeDisabled();
+      });
+    });
+
+    it('should block confirmation if any player has not submitted a bid', async () => {
+      render(
+        <BidCollectionComponent
+          round={2}
+          handCount={2}
+          players={mockPlayers}
+          onBidsConfirmed={mockOnBidsConfirmed}
+        />
+      );
+
+      // Only player 1 submits a bid
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
+
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('confirm-bids-button') as HTMLButtonElement;
+        expect(confirmButton).toBeDisabled();
+      });
     });
   });
 
   describe('Criterion 4: Allow bid modifications before confirming', () => {
-    it('should allow changing bids after entering them', async () => {
-      const { getByDisplayValue } = render(
+    it('should allow modifying bids after summary is shown', async () => {
+      render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      const inputs = screen.getAllByRole('spinbutton');
+      // Submit initial bids
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      // Set initial bids
-      await userEvent.clear(inputs[0]);
-      await userEvent.type(inputs[0], '1');
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '2' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
 
-      // Modify the bid
-      await userEvent.clear(inputs[0]);
-      await userEvent.type(inputs[0], '2');
+      // Show summary
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('confirm-bids-button'));
+      });
 
-      expect(inputs[0]).toHaveValue(2);
-    });
+      // Summary should be displayed
+      await waitFor(() => {
+        expect(screen.getByTestId('bid-summary')).toBeInTheDocument();
+      });
 
-    it('should allow modifying bids after showing summary', () => {
-      const { getByText, queryByText } = render(
-        <BidCollectionComponent
-          players={mockPlayers}
-          roundNumber={2}
-          onBidsConfirmed={mockOnBidsConfirmed}
-        />,
-      );
+      // Modify a bid
+      const modifyButton = await screen.findByTestId('modify-button-player-1');
+      fireEvent.click(modifyButton);
 
-      // Set bids
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      fireEvent.change(inputs[2], { target: { value: '0' } });
+      const modifyInput = screen.getByTestId('modify-input-player-1') as HTMLInputElement;
+      fireEvent.change(modifyInput, { target: { value: '2' } });
+      fireEvent.click(screen.getByTestId('modify-confirm-player-1'));
 
-      // Confirm to show summary
-      fireEvent.click(getByText('Confirm All Bids'));
-
-      waitFor(() => {
-        expect(screen.getByText('Bid Summary - Round 2')).toBeInTheDocument();
-
-        // Click modify bids
-        fireEvent.click(getByText('Modify Bids'));
-
-        // Should be back to input form
-        expect(queryByText('Bid Summary - Round 2')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('bid-value-player-1')).toHaveTextContent('2');
       });
     });
   });
 
   describe('Criterion 5: Show bid summary before moving to scoring phase', () => {
-    it('should display bid summary with all player bids', () => {
-      const { getByText } = render(
+    it('should display bid summary when all bids are confirmed', async () => {
+      render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={2}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      // Set bids for all players
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      fireEvent.change(inputs[2], { target: { value: '0' } });
+      // Submit bids
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      // Click confirm
-      fireEvent.click(getByText('Confirm All Bids'));
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
 
-      waitFor(() => {
-        expect(screen.getByText('Bid Summary - Round 2')).toBeInTheDocument();
-        expect(screen.getByText('Alice')).toBeInTheDocument();
-        expect(screen.getByText('Bob')).toBeInTheDocument();
-        expect(screen.getByText('Charlie')).toBeInTheDocument();
+      // Click confirm to show summary
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('confirm-bids-button'));
+      });
+
+      // Summary should be displayed
+      await waitFor(() => {
+        expect(screen.getByTestId('bid-summary')).toBeInTheDocument();
+        expect(screen.getByText('Bid Summary')).toBeInTheDocument();
       });
     });
 
-    it('should show total bids in summary', () => {
-      const { getByText } = render(
+    it('should show total bids in summary', async () => {
+      render(
         <BidCollectionComponent
+          round={3}
+          handCount={3}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '2' } });
-      fireEvent.change(inputs[2], { target: { value: '0' } });
+      // Submit bids: 2 + 1 = 3
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '2' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      fireEvent.click(getByText('Confirm All Bids'));
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
 
-      waitFor(() => {
-        expect(screen.getByText('Total bids: 3')).toBeInTheDocument();
+      // Show summary
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('confirm-bids-button'));
       });
-    });
-
-    it('should call onBidsConfirmed when confirming from summary', async () => {
-      const { getByText } = render(
-        <BidCollectionComponent
-          players={mockPlayers}
-          roundNumber={2}
-          onBidsConfirmed={mockOnBidsConfirmed}
-        />,
-      );
-
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      fireEvent.change(inputs[2], { target: { value: '0' } });
-
-      fireEvent.click(getByText('Confirm All Bids'));
 
       await waitFor(() => {
-        fireEvent.click(getByText('Confirm & Proceed to Scoring'));
+        expect(screen.getByTestId('bid-total')).toHaveTextContent('Total Bids: 3');
+      });
+    });
+
+    it('should list all players and their bids in summary', async () => {
+      render(
+        <BidCollectionComponent
+          round={2}
+          handCount={2}
+          players={mockPlayers}
+          onBidsConfirmed={mockOnBidsConfirmed}
+        />
+      );
+
+      // Submit bids
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '0' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
+
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '2' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
+
+      // Show summary
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('confirm-bids-button'));
       });
 
-      expect(mockOnBidsConfirmed).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({
-            playerId: '1',
-            playerName: 'Alice',
-            bidAmount: 1,
-            round: 2,
-          }),
-          expect.objectContaining({
-            playerId: '2',
-            playerName: 'Bob',
-            bidAmount: 1,
-            round: 2,
-          }),
-          expect.objectContaining({
-            playerId: '3',
-            playerName: 'Charlie',
-            bidAmount: 0,
-            round: 2,
-          }),
-        ]),
+      await waitFor(() => {
+        expect(screen.getByTestId('summary-item-player-1')).toBeInTheDocument();
+        expect(screen.getByTestId('summary-item-player-2')).toBeInTheDocument();
+        expect(screen.getByTestId('bid-value-player-1')).toHaveTextContent('0');
+        expect(screen.getByTestId('bid-value-player-2')).toHaveTextContent('2');
+      });
+    });
+
+    it('should proceed to scoring phase when summary is confirmed', async () => {
+      render(
+        <BidCollectionComponent
+          round={2}
+          handCount={2}
+          players={mockPlayers}
+          onBidsConfirmed={mockOnBidsConfirmed}
+        />
       );
+
+      // Submit bids
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
+
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
+
+      // Show summary
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('confirm-bids-button'));
+      });
+
+      // Confirm summary to proceed
+      await waitFor(() => {
+        fireEvent.click(screen.getByTestId('summary-confirm-button'));
+      });
+
+      // onBidsConfirmed should be called with the bids
+      await waitFor(() => {
+        expect(mockOnBidsConfirmed).toHaveBeenCalled();
+        const passedBids = mockOnBidsConfirmed.mock.calls[0][0] as Map<string, number>;
+        expect(passedBids.get('player-1')).toBe(1);
+        expect(passedBids.get('player-2')).toBe(1);
+      });
     });
   });
 
-  describe('Edge cases', () => {
-    it('should handle round 1 with 1 hand', () => {
+  describe('Edge cases and validation', () => {
+    it('should accept bid of 0 (zero is valid)', async () => {
       render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={1}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      expect(screen.getByText('Hands Available: 1')).toBeInTheDocument();
+      const bidInput1 = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput1, { target: { value: '0' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
+
+      const bidInput2 = screen.getByTestId('bid-input-field-player-2') as HTMLInputElement;
+      fireEvent.change(bidInput2, { target: { value: '1' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-2'));
+
+      // Both players should have valid bids
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('confirm-bids-button') as HTMLButtonElement;
+        expect(confirmButton).not.toBeDisabled();
+      });
     });
 
-    it('should handle zero as valid bid', async () => {
-      const { getByText } = render(
+    it('should reject non-numeric input', async () => {
+      render(
         <BidCollectionComponent
+          round={2}
+          handCount={2}
           players={mockPlayers}
-          roundNumber={3}
           onBidsConfirmed={mockOnBidsConfirmed}
-        />,
+        />
       );
 
-      const inputs = screen.getAllByRole('spinbutton');
-      fireEvent.change(inputs[0], { target: { value: '1' } });
-      fireEvent.change(inputs[1], { target: { value: '1' } });
-      fireEvent.change(inputs[2], { target: { value: '1' } });
+      const bidInput = screen.getByTestId('bid-input-field-player-1') as HTMLInputElement;
+      fireEvent.change(bidInput, { target: { value: 'abc' } });
+      fireEvent.click(screen.getByTestId('bid-submit-player-1'));
 
-      const confirmBtn = getByText('Confirm All Bids');
-      expect(confirmBtn).not.toBeDisabled();
+      await waitFor(() => {
+        expect(screen.getByTestId('error-message')).toHaveTextContent('Bid must be a valid number');
+      });
     });
   });
 });
