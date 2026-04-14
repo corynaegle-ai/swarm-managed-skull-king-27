@@ -26,39 +26,36 @@ npm install
 const { calculateHandScore, calculateRoundScores, updateTotalScores } = require('./src/scoring');
 
 // Calculate score for a single hand
-const score = calculateHandScore(
+const score = calculateRoundScore(
   5,      // bid amount
   5,      // tricks taken
-  1,      // hand number
-  0       // bonus points (optional)
+  1       // hand number
 );
 
 console.log(score);
 // Output: {
 //   baseScore: 100,      // 20 × 5 tricks
-//   bonusApplied: 0,
-//   totalScore: 100,
-//   breakdown: 'Non-zero bid exact: +20 × 5 tricks = 100',
-//   isBidExact: true
+//   bonusScore: 10,      // 10 × 1 hand (automatic for exact bid)
+//   totalScore: 110,
+//   isExact: true,
+//   breakdown: { ... }
 // }
 ```
 
 ### Multiple Players
 
 ```javascript
-const roundResults = [
-  { bid: 3, tricks: 3, handNumber: 1, playerId: 'Alice' },
-  { bid: 2, tricks: 1, handNumber: 1, playerId: 'Bob' },
-  { bid: 5, tricks: 5, handNumber: 1, playerId: 'Charlie', bonusPoints: 10 }
+const rounds = [
+  { bid: 3, tricks: 3, hands: 1 },
+  { bid: 2, tricks: 1, hands: 1 },
+  { bid: 5, tricks: 5, hands: 1 }
 ];
 
-const roundScores = calculateRoundScores(roundResults);
-// Alice: 60 points (20 × 3)
-// Bob: -10 points (-10 × 1 difference)
-// Charlie: 110 points (20 × 5 + 10 bonus)
-
-let totals = {};
-totals = updateTotalScores(totals, roundScores);
+const totalScores = calculateTotalScore(rounds);
+// Round 1: 60 points (20 × 3)
+// Round 2: -10 points (-10 × 1 difference)
+// Round 3: 110 points (20 × 5 + 10 automatic bonus)
+// Total: 160 points
 ```
 
 ## Scoring Rules
@@ -96,77 +93,84 @@ Score = -10 × 2 = -20 points (regardless of trick count)
 
 ### Bonus Points
 
-Bonus points are **only applied when the bid is exactly met on non-zero bids**. Zero bids never receive bonus points.
+Bonus points are **automatically applied only when the bid is exactly met on non-zero bids**. Zero bids never receive bonus points. The bonus is calculated as 10 × hand_number.
 
 ```
-Example 1 (Applied):
-bid=5, tricks=5, bonus=10
-Score = (20 × 5) + 10 = +110 points
+Example 1 (Applied Automatically):
+bid=5, tricks=5, hand=1
+Score = (20 × 5) + (10 × 1) = +110 points
 
-Example 2 (Not Applied):
-bid=5, tricks=3, bonus=10
-Score = -10 × 2 = -20 points (bonus ignored)
+Example 2 (Not Applied - Bid Missed):
+bid=5, tricks=3, hand=1
+Score = -10 × 2 = -20 points (no bonus on missed bid)
 
-Example 3 (Not Applied on zero bid):
-bid=0, tricks=0, hand=1, bonus=15
-Score = 10 × 1 = +10 points (bonus not applied to zero bids)
+Example 3 (Not Applied - Zero Bid):
+bid=0, tricks=0, hand=1
+Score = 10 × 1 = +10 points (no bonus on zero bids, even if exact)
 ```
 
 ## API Reference
 
-### calculateHandScore(bid, tricks, handNumber, bonusPoints = 0)
+### calculateRoundScore(bid, tricks, hands)
 
-Calculates the score for a single hand.
+Calculates the score for a single round/hand.
 
 **Parameters:**
-- `bid` (number): The bid amount (0-13)
-- `tricks` (number): Actual tricks taken (0-13)
-- `handNumber` (number): The hand number (1-indexed, used for zero bid scoring)
-- `bonusPoints` (number): Optional bonus points (only applied if bid is exact)
+- `bid` (number): The bid amount (0 or higher)
+- `tricks` (number): Actual tricks taken (0 or higher)
+- `hands` (number): The hand/round number (positive integer, used for multipliers)
 
 **Returns:** Object with:
-- `baseScore`: Score before bonuses
-- `bonusApplied`: Bonus points applied (0 if bid missed)
-- `totalScore`: Final score (baseScore + bonusApplied)
-- `breakdown`: Human-readable scoring explanation
-- `isBidExact`: Boolean indicating if bid was met exactly
+- `baseScore`: Score from bid correctness (±20 per trick for non-zero, ±10×hands for zero)
+- `bonusScore`: Automatic bonus points (10×hands if exact non-zero bid, 0 otherwise)
+- `totalScore`: Final score (baseScore + bonusScore)
+- `isExact`: Boolean indicating if bid was met exactly
+- `breakdown`: Object with detailed breakdown and human-readable message
 
 **Throws:**
 - `TypeError`: If parameters are not the correct type
 - `RangeError`: If numeric parameters are outside valid ranges
 
-### calculateRoundScores(roundResults)
+### calculateTotalScore(rounds)
 
-Calculates scores for all players in a single round.
+Calculates total score across multiple rounds for a player.
 
 **Parameters:**
-- `roundResults` (Array): Array of hand result objects, each with:
+- `rounds` (Array): Array of round result objects, each with:
   - `bid` (number): The bid amount
   - `tricks` (number): Tricks taken
-  - `handNumber` (number): Hand number
-  - `bonusPoints` (number, optional): Bonus points
-  - `playerId` (string, optional): Player identifier
+  - `hands` (number): Hand/round number (positive integer)
 
-**Returns:** Object mapping playerId to score results
+**Returns:** Object with:
+- `totalScore`: Cumulative score across all rounds
+- `rounds`: Array of individual round score objects
+- `breakdown`: Detailed breakdown including round-by-round scores
 
-### updateTotalScores(currentTotals, roundScores)
+### validateRoundScoring(bid, tricks)
 
-Updates cumulative game scores with a round's scores.
-
-**Parameters:**
-- `currentTotals` (Object): Current cumulative scores by playerId
-- `roundScores` (Object): Round scores from calculateRoundScores
-
-**Returns:** New object with updated cumulative scores
-
-### getScoreBreakdown(roundScores)
-
-Converts round scores to a breakdown array for display.
+Validates scoring inputs for a single round.
 
 **Parameters:**
-- `roundScores` (Object): Round scores from calculateRoundScores
+- `bid` (number): The bid amount
+- `tricks` (number): Tricks taken
 
-**Returns:** Array of breakdown objects with playerId and all score details
+**Returns:** Object with:
+- `isValid`: Boolean indicating if inputs are valid
+- `errors`: Array of error messages (if any)
+- `warnings`: Array of warning messages (non-blocking issues)
+
+### getScoreMessage(bid, tricks, hands, baseScore, bonusScore)
+
+Generates a human-readable message describing the score calculation.
+
+**Parameters:**
+- `bid` (number): The bid amount
+- `tricks` (number): Tricks taken
+- `hands` (number): Hand/round number
+- `baseScore` (number): Calculated base score
+- `bonusScore` (number): Calculated bonus score
+
+**Returns:** String with human-readable explanation of the score
 
 ## Testing
 
@@ -185,32 +189,32 @@ All acceptance criteria are covered with explicit test cases.
 
 ## Scoring Examples
 
-### Example 1: Standard Non-Zero Bid
+### Example 1: Standard Non-Zero Bid (Exact)
 ```javascript
-calculateHandScore(5, 5, 1)
-// Result: baseScore=100, totalScore=100
-// Explanation: Bid exactly 5 tricks, got 5 tricks → 20 × 5 = +100
+calculateRoundScore(5, 5, 1)
+// Result: baseScore=100, bonusScore=10, totalScore=110
+// Explanation: Bid exactly 5 tricks, got 5 → (20 × 5) + (10 × 1) = +110
 ```
 
 ### Example 2: Missed Non-Zero Bid
 ```javascript
-calculateHandScore(5, 3, 1)
-// Result: baseScore=-20, totalScore=-20
-// Explanation: Bid 5 tricks, got 3 → -10 × |5-3| = -10 × 2 = -20
+calculateRoundScore(5, 3, 1)
+// Result: baseScore=-20, bonusScore=0, totalScore=-20
+// Explanation: Bid 5 tricks, got 3 → -10 × |5-3| = -20 (no bonus on miss)
 ```
 
 ### Example 3: Exact Zero Bid
 ```javascript
-calculateHandScore(0, 0, 2)
-// Result: baseScore=20, bonusApplied=0, totalScore=20
+calculateRoundScore(0, 0, 2)
+// Result: baseScore=20, bonusScore=0, totalScore=20
 // Explanation: Bid 0 on hand 2, took 0 tricks → 10 × 2 = +20 (no bonus on zero bids)
 ```
 
 ### Example 4: Missed Zero Bid
 ```javascript
-calculateHandScore(0, 1, 2)
-// Result: baseScore=-20, totalScore=-20
-// Explanation: Bid 0 on hand 2, took 1 trick → -10 × 2 = -20 (bonus not applied)
+calculateRoundScore(0, 1, 2)
+// Result: baseScore=-20, bonusScore=0, totalScore=-20
+// Explanation: Bid 0 on hand 2, took 1 trick → -10 × 2 = -20
 ```
 
 ## Implementation Details
