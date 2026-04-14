@@ -1,223 +1,260 @@
-/**
- * app.js - Main application controller
- * Manages UI rendering and game flow state synchronization
- */
+import { addPlayer, removePlayer, getPlayers, isValidPlayerName } from './playerManager.js';
 
-import gameState from './gameState.js';
-import playerManager from './playerManager.js';
+const MAX_PLAYERS = 8;
+const MIN_PLAYERS = 2;
 
-/**
- * Escapes HTML special characters to prevent XSS vulnerabilities
- * @param {string} text - Text to escape
- * @returns {string} - Escaped text safe for innerHTML
- */
-function escapeHTML(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return String(text).replace(/[&<>"']/g, char => map[char]);
-}
+const playerNameInput = document.querySelector('#player-name-input');
+const addPlayerBtn = document.querySelector('#add-player-btn');
+const playerListContainer = document.querySelector('#player-list-container');
+const startGameBtn = document.querySelector('#start-game-btn');
+const playerSetupSection = document.querySelector('.player-setup-section');
+const gameInfoSection = document.querySelector('.game-info-section');
+const playerScoresSection = document.querySelector('.player-scores-section');
+const playerScoresTable = document.querySelector('#player-scores-table tbody');
+const bidPhaseContainer = document.querySelector('#bid-phase-container');
+const errorMessage = document.querySelector('#error-message');
+const playerSetupForm = document.querySelector('#player-setup-form');
 
 /**
- * Renders round information in both the header and main section
+ * Clears error message display
  */
-function renderRoundInfo() {
-  const currentRound = gameState.getCurrentRound();
-  const totalRounds = gameState.getTotalRounds();
-  
-  // Update header round-info
-  const roundInfoElement = document.getElementById('round-info');
-  if (roundInfoElement) {
-    roundInfoElement.textContent = `Round ${currentRound} of ${totalRounds}`;
-  }
-  
-  // Update main section round-number span
-  const roundNumberElement = document.getElementById('round-number');
-  if (roundNumberElement) {
-    roundNumberElement.textContent = String(currentRound);
+function clearError() {
+  if (errorMessage) {
+    errorMessage.textContent = '';
+    errorMessage.classList.remove('visible');
   }
 }
 
 /**
- * Renders player scores table with sanitized player names
+ * Displays error message
  */
-function renderPlayerScores() {
-  const players = playerManager.getPlayers();
-  const scoresTableBody = document.querySelector('#player-scores-table tbody');
-  
-  if (!scoresTableBody) {
-    console.warn('Player scores table body not found');
+function showError(message) {
+  if (errorMessage) {
+    errorMessage.textContent = message;
+    errorMessage.classList.add('visible');
+  }
+}
+
+/**
+ * Updates the disabled state of buttons based on current player count
+ */
+function updateButtonStates() {
+  const players = getPlayers();
+  const playerCount = players.length;
+
+  // Add Player button: disable if at max players
+  if (addPlayerBtn) {
+    addPlayerBtn.disabled = playerCount >= MAX_PLAYERS;
+  }
+
+  // Input field: disable if at max players
+  if (playerNameInput) {
+    playerNameInput.disabled = playerCount >= MAX_PLAYERS;
+  }
+
+  // Start Game button: disable if fewer than MIN_PLAYERS
+  if (startGameBtn) {
+    startGameBtn.disabled = playerCount < MIN_PLAYERS;
+  }
+}
+
+/**
+ * Renders the player list with remove buttons
+ */
+function renderPlayerList() {
+  const players = getPlayers();
+
+  // Clear existing content
+  playerListContainer.innerHTML = '';
+
+  if (players.length === 0) {
+    const noPlayersMsg = document.createElement('div');
+    noPlayersMsg.className = 'no-players-message';
+    noPlayersMsg.textContent = 'No players added yet';
+    playerListContainer.appendChild(noPlayersMsg);
+  } else {
+    const playerList = document.createElement('ul');
+    playerList.className = 'player-list';
+
+    players.forEach((player, index) => {
+      const listItem = document.createElement('li');
+      listItem.className = 'player-list-item';
+
+      const playerNameSpan = document.createElement('span');
+      playerNameSpan.className = 'player-name';
+      playerNameSpan.textContent = player.name;
+
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'remove-player-btn';
+      removeButton.textContent = '×';
+      removeButton.setAttribute('aria-label', `Remove ${player.name}`);
+      removeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleRemovePlayer(index);
+      });
+
+      listItem.appendChild(playerNameSpan);
+      listItem.appendChild(removeButton);
+      playerList.appendChild(listItem);
+    });
+
+    playerListContainer.appendChild(playerList);
+  }
+
+  // Render player count info
+  renderPlayerCountInfo();
+
+  // Update button states
+  updateButtonStates();
+}
+
+/**
+ * Renders the player count information message
+ */
+function renderPlayerCountInfo() {
+  const players = getPlayers();
+  const playerCount = players.length;
+
+  // Remove any existing player-count-info element
+  const existingCountInfo = playerListContainer.querySelector('.player-count-info');
+  if (existingCountInfo) {
+    existingCountInfo.remove();
+  }
+
+  // Create and add new player count info
+  const countInfo = document.createElement('div');
+  countInfo.className = 'player-count-info';
+
+  if (playerCount >= MIN_PLAYERS) {
+    countInfo.classList.add('ready');
+    countInfo.textContent = `${playerCount} player${playerCount !== 1 ? 's' : ''} ready to start`;
+  } else {
+    const needed = MIN_PLAYERS - playerCount;
+    countInfo.textContent = `Add ${needed} more player${needed !== 1 ? 's' : ''} to start`;
+  }
+
+  playerListContainer.appendChild(countInfo);
+}
+
+/**
+ * Handles adding a new player
+ */
+function handleAddPlayer(e) {
+  e.preventDefault();
+  clearError();
+
+  const playerName = playerNameInput.value.trim();
+
+  if (!isValidPlayerName(playerName)) {
+    showError('Player name is required');
+    playerNameInput.focus();
     return;
   }
-  
+
+  try {
+    addPlayer(playerName);
+    playerNameInput.value = '';
+    playerNameInput.focus();
+    renderPlayerList();
+  } catch (error) {
+    showError(error.message);
+    playerNameInput.focus();
+  }
+}
+
+/**
+ * Handles removing a player
+ */
+function handleRemovePlayer(index) {
+  removePlayer(index);
+  clearError();
+  renderPlayerList();
+}
+
+/**
+ * Handles game start - transitions from setup to game phase
+ */
+function handleStartGame(e) {
+  e.preventDefault();
+
+  const players = getPlayers();
+
+  if (players.length < MIN_PLAYERS) {
+    showError(`Need at least ${MIN_PLAYERS} players to start`);
+    return;
+  }
+
+  // Hide player setup section
+  if (playerSetupSection) {
+    playerSetupSection.style.display = 'none';
+  }
+
+  // Show game info section if it was hidden
+  if (gameInfoSection) {
+    gameInfoSection.style.display = 'block';
+  }
+
+  // Show player scores section
+  if (playerScoresSection) {
+    playerScoresSection.style.display = 'block';
+  }
+
+  // Populate initial scores table
+  renderScoresTable();
+
+  // Show bid phase container for gameplay
+  if (bidPhaseContainer) {
+    bidPhaseContainer.style.display = 'block';
+  }
+
+  clearError();
+}
+
+/**
+ * Renders the scores table with all players
+ */
+function renderScoresTable() {
+  const players = getPlayers();
+
   // Clear existing rows
-  scoresTableBody.innerHTML = '';
-  
-  // Add new rows for each player
-  players.forEach(player => {
+  playerScoresTable.innerHTML = '';
+
+  // Add a row for each player
+  players.forEach((player) => {
     const row = document.createElement('tr');
+
     const nameCell = document.createElement('td');
-    const scoreCell = document.createElement('td');
-    
-    // Sanitize player name to prevent XSS
     nameCell.textContent = player.name;
-    scoreCell.textContent = String(player.score);
-    
+
+    const scoreCell = document.createElement('td');
+    scoreCell.textContent = player.score || 0;
+
     row.appendChild(nameCell);
     row.appendChild(scoreCell);
-    scoresTableBody.appendChild(row);
+    playerScoresTable.appendChild(row);
   });
 }
 
 /**
- * Renders game phase information in both the header and main section
- */
-function renderGamePhase() {
-  const currentPhase = gameState.getCurrentPhase();
-  
-  // Format phase for display (e.g., "BIDDING" -> "Bidding")
-  const displayPhase = currentPhase
-    .toLowerCase()
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-  
-  // Update header phase-indicator
-  const phaseIndicatorElement = document.getElementById('phase-indicator');
-  if (phaseIndicatorElement) {
-    phaseIndicatorElement.textContent = `${displayPhase} Phase`;
-  }
-  
-  // Update main section current-phase span
-  const currentPhaseElement = document.getElementById('current-phase');
-  if (currentPhaseElement) {
-    currentPhaseElement.textContent = displayPhase;
-  }
-}
-
-/**
- * Renders final scores screen with sanitized player names
- * Shows the screen when game is over, hides otherwise
- */
-function renderFinalScores() {
-  const finalScoresScreen = document.getElementById('final-scores-screen');
-  const finalScoresContent = document.querySelector('.final-scores-content');
-  
-  if (!finalScoresScreen || !finalScoresContent) {
-    console.warn('Final scores screen elements not found');
-    return;
-  }
-  
-  // Check if game is over
-  const isGameOver = gameState.isGameOver();
-  
-  if (isGameOver) {
-    // Get players and sort by score descending
-    const players = playerManager.getPlayers();
-    const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-    
-    // Clear and populate final scores content
-    finalScoresContent.innerHTML = '';
-    
-    sortedPlayers.forEach((player, index) => {
-      const playerScoreDiv = document.createElement('div');
-      playerScoreDiv.className = 'final-score-item';
-      
-      // Sanitize player name using textContent instead of innerHTML
-      const playerScoreText = document.createTextNode(
-        `${index + 1}. ${player.name}: ${player.score} points`
-      );
-      playerScoreDiv.appendChild(playerScoreText);
-      
-      finalScoresContent.appendChild(playerScoreDiv);
-    });
-    
-    // Show the final scores screen
-    finalScoresScreen.classList.remove('hidden');
-  } else {
-    // Hide the final scores screen if game is not over
-    finalScoresScreen.classList.add('hidden');
-  }
-}
-
-/**
- * Updates all UI elements
- */
-function updateUI() {
-  renderRoundInfo();
-  renderPlayerScores();
-  renderGamePhase();
-  renderFinalScores();
-}
-
-/**
- * Handles new game button click
- */
-function handleNewGame() {
-  try {
-    // Reset game state
-    gameState.reset();
-    
-    // Reset player scores
-    playerManager.resetAllScores();
-    
-    // Explicitly hide final scores screen
-    const finalScoresScreen = document.getElementById('final-scores-screen');
-    if (finalScoresScreen) {
-      finalScoresScreen.classList.add('hidden');
-    }
-    
-    // Update UI to reflect reset state
-    updateUI();
-  } catch (error) {
-    console.error('Error resetting game:', error);
-  }
-}
-
-/**
- * Initializes the application
+ * Initializes the app
  */
 function initializeApp() {
-  try {
-    // Set up event listeners for state changes
-    gameState.subscribe(() => {
-      updateUI();
-    });
-    
-    playerManager.subscribe(() => {
-      updateUI();
-    });
-    
-    // Set up new game button listener
-    const newGameBtn = document.getElementById('new-game-btn');
-    if (newGameBtn) {
-      newGameBtn.addEventListener('click', handleNewGame);
-    }
-    
-    // Initial UI render
-    updateUI();
-    
-    console.log('Game initialized successfully');
-  } catch (error) {
-    console.error('Error initializing app:', error);
-    // Display user-friendly error message
-    const appContainer = document.getElementById('app-container');
-    if (appContainer) {
-      appContainer.insertAdjacentHTML(
-        'afterbegin',
-        '<div style="background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; margin: 10px; border-radius: 4px;">'
-        + 'Error: Failed to initialize game. Please refresh the page.'
-        + '</div>'
-      );
-    }
+  // Attach form submit listener
+  if (playerSetupForm) {
+    playerSetupForm.addEventListener('submit', handleAddPlayer);
   }
+
+  // Attach start game button listener
+  if (startGameBtn) {
+    startGameBtn.addEventListener('click', handleStartGame);
+  }
+
+  // Initial render
+  renderPlayerList();
 }
 
-// Initialize app when DOM is ready
+// Initialize the app when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
