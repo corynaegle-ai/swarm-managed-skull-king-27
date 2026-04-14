@@ -1,5 +1,195 @@
 /**
  * Scoring module for Oh Hell card game
+ * Implements Oh Hell scoring rules and real-time score calculations
+ */
+
+/**
+ * Calculate score based on bid vs tricks taken
+ * Oh Hell Scoring Rules:
+ * - If bid === tricks: 10 + tricks + bonus points
+ * - If bid !== tricks: 0 + bonus points
+ *
+ * @param {number} bid - The bid amount
+ * @param {number} tricksTaken - The number of tricks actually taken
+ * @param {number} bonusPoints - Bonus points awarded (default 0)
+ * @returns {number} The calculated score
+ */
+function calculateScore(bid, tricksTaken, bonusPoints = 0) {
+  // Input validation
+  if (typeof bid !== 'number' || typeof tricksTaken !== 'number' || typeof bonusPoints !== 'number') {
+    console.error('Invalid input types for calculateScore');
+    return 0;
+  }
+
+  if (bid < 0 || tricksTaken < 0 || bonusPoints < 0) {
+    console.error('Bid, tricks, and bonus points cannot be negative');
+    return 0;
+  }
+
+  // Oh Hell scoring logic
+  if (bid === tricksTaken) {
+    return 10 + tricksTaken + bonusPoints;
+  } else {
+    return 0 + bonusPoints;
+  }
+}
+
+/**
+ * Validate form inputs for bid phase
+ * @param {number} bid - The bid value
+ * @param {number} maxTricks - Maximum tricks available in the round
+ * @returns {object} Validation result with isValid flag and error message
+ */
+function validateBidInput(bid, maxTricks) {
+  if (typeof bid !== 'number' || bid < 0) {
+    return { isValid: false, error: 'Bid must be a non-negative number' };
+  }
+
+  if (bid > maxTricks) {
+    return { isValid: false, error: `Bid cannot exceed ${maxTricks} tricks` };
+  }
+
+  return { isValid: true, error: null };
+}
+
+/**
+ * Validate form inputs for tricks phase
+ * @param {number} tricks - The tricks taken value
+ * @param {number} maxTricks - Maximum tricks available in the round
+ * @returns {object} Validation result with isValid flag and error message
+ */
+function validateTricksInput(tricks, maxTricks) {
+  if (typeof tricks !== 'number' || tricks < 0) {
+    return { isValid: false, error: 'Tricks must be a non-negative number' };
+  }
+
+  if (tricks > maxTricks) {
+    return { isValid: false, error: `Tricks cannot exceed ${maxTricks}` };
+  }
+
+  return { isValid: true, error: null };
+}
+
+/**
+ * Check if all required form fields are completed
+ * @param {object} formData - Object containing form field values
+ * @param {array} requiredFields - Array of required field names
+ * @returns {boolean} True if all required fields have values
+ */
+function isFormComplete(formData, requiredFields) {
+  return requiredFields.every(field => {
+    const value = formData[field];
+    return value !== null && value !== undefined && value !== '';
+  });
+}
+
+/**
+ * Update score display element in DOM
+ * @param {string} elementId - ID of the DOM element to update
+ * @param {number} score - The score value to display
+ * @param {boolean} isExact - Whether the bid was exact (for styling)
+ */
+function updateScoreDisplay(elementId, score, isExact = false) {
+  const element = document.querySelector(`#${elementId}`);
+  if (!element) {
+    console.error(`Element with id '${elementId}' not found`);
+    return;
+  }
+
+  element.textContent = score;
+  element.classList.remove('score-exact', 'score-miss');
+  if (isExact && score > 0) {
+    element.classList.add('score-exact');
+  } else if (!isExact && score === 0) {
+    element.classList.add('score-miss');
+  }
+}
+
+/**
+ * Update button state based on form completion
+ * @param {string} buttonId - ID of the button to update
+ * @param {boolean} isEnabled - Whether the button should be enabled
+ */
+function updateButtonState(buttonId, isEnabled) {
+  const button = document.querySelector(`#${buttonId}`);
+  if (!button) {
+    console.error(`Button with id '${buttonId}' not found`);
+    return;
+  }
+
+  button.disabled = !isEnabled;
+  if (isEnabled) {
+    button.classList.remove('disabled');
+  } else {
+    button.classList.add('disabled');
+  }
+}
+
+/**
+ * Set up real-time input validation listeners
+ * @param {string} inputId - ID of the input element
+ * @param {function} validationFn - Validation function to call
+ * @param {string} errorElementId - ID of element to display error messages
+ */
+function setupInputValidation(inputId, validationFn, errorElementId) {
+  const inputElement = document.querySelector(`#${inputId}`);
+  const errorElement = document.querySelector(`#${errorElementId}`);
+
+  if (!inputElement) {
+    console.error(`Input element with id '${inputId}' not found`);
+    return;
+  }
+
+  inputElement.addEventListener('input', (event) => {
+    const value = parseInt(event.target.value, 10);
+    const validation = validationFn(value);
+
+    if (errorElement) {
+      if (validation.isValid) {
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        inputElement.classList.remove('input-error');
+      } else {
+        errorElement.textContent = validation.error;
+        errorElement.style.display = 'block';
+        inputElement.classList.add('input-error');
+      }
+    }
+  });
+}
+
+/**
+ * Calculate and update round totals
+ * @param {array} playerScores - Array of player score objects
+ * @returns {array} Updated player scores with round totals
+ */
+function calculateRoundTotals(playerScores) {
+  if (!Array.isArray(playerScores)) {
+    console.error('playerScores must be an array');
+    return [];
+  }
+
+  return playerScores.map(player => ({
+    ...player,
+    roundTotal: (player.roundTotal || 0) + (player.roundScore || 0)
+  }));
+}
+
+// Export functions for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    calculateScore,
+    validateBidInput,
+    validateTricksInput,
+    isFormComplete,
+    updateScoreDisplay,
+    updateButtonState,
+    setupInputValidation,
+    calculateRoundTotals
+  };
+}
+/**
+ * Scoring module for Oh Hell card game
  * Handles score calculation, real-time updates, and form validation
  */
 
