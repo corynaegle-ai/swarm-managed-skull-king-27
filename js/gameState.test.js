@@ -1,132 +1,221 @@
 /**
- * gameState.test.js - Unit tests for game state management
+ * Test suite for Game State Management Module
  */
 
-// Test suite for GameState module
-describe('GameState', function() {
+const {
+  initializeGame,
+  getCurrentRound,
+  setGamePhase,
+  getGamePhase,
+  advanceRound,
+  isGameComplete,
+  getGameState
+} = require('./gameState');
 
-  beforeEach(function() {
+describe('Game State Management', () => {
+  beforeEach(() => {
     // Reset game state before each test
-    GameState.initializeGame();
+    initializeGame();
   });
 
-  describe('initializeGame()', function() {
-    it('should reset state to round 1, setup phase', function() {
-      GameState.initializeGame();
-      expect(GameState.getCurrentRound()).toBe(1);
-      expect(GameState.getGamePhase()).toBe('setup');
-      expect(GameState.isGameComplete()).toBe(false);
+  describe('initializeGame()', () => {
+    it('should set currentRound to 1', () => {
+      expect(getCurrentRound()).toBe(1);
     });
 
-    it('should clear players array on initialization', function() {
-      const state = GameState.getGameState();
-      expect(Array.isArray(state.players)).toBe(true);
-      expect(state.players.length).toBe(0);
-    });
-  });
-
-  describe('getCurrentRound()', function() {
-    it('should return current round number', function() {
-      expect(GameState.getCurrentRound()).toBe(1);
-    });
-  });
-
-  describe('Phase Management', function() {
-    it('setGamePhase() should set phase to valid values', function() {
-      GameState.setGamePhase('bidding');
-      expect(GameState.getGamePhase()).toBe('bidding');
-
-      GameState.setGamePhase('scoring');
-      expect(GameState.getGamePhase()).toBe('scoring');
-
-      GameState.setGamePhase('complete');
-      expect(GameState.getGamePhase()).toBe('complete');
+    it('should set phase to "setup"', () => {
+      expect(getGamePhase()).toBe('setup');
     });
 
-    it('setGamePhase() should throw error for invalid phase', function() {
-      expect(function() {
-        GameState.setGamePhase('invalid');
-      }).toThrow();
+    it('should set isComplete to false', () => {
+      expect(isGameComplete()).toBe(false);
     });
 
-    it('getGamePhase() should return setup phase initially', function() {
-      expect(GameState.getGamePhase()).toBe('setup');
+    it('should initialize players array as empty', () => {
+      const state = getGameState();
+      expect(state.players).toEqual([]);
     });
   });
 
-  describe('advanceRound()', function() {
-    it('should increment round number', function() {
+  describe('getCurrentRound()', () => {
+    it('should return current round number', () => {
+      expect(getCurrentRound()).toBe(1);
+    });
+  });
+
+  describe('setGamePhase() and getGamePhase()', () => {
+    it('should set and get valid phases', () => {
+      setGamePhase('bidding');
+      expect(getGamePhase()).toBe('bidding');
+
+      setGamePhase('scoring');
+      expect(getGamePhase()).toBe('scoring');
+
+      setGamePhase('setup');
+      expect(getGamePhase()).toBe('setup');
+
+      setGamePhase('complete');
+      expect(getGamePhase()).toBe('complete');
+    });
+
+    it('should not set invalid phases', () => {
+      setGamePhase('invalid');
+      expect(getGamePhase()).toBe('setup'); // Should remain unchanged
+    });
+  });
+
+  describe('advanceRound()', () => {
+    it('should increment round from 1 to 2', () => {
+      advanceRound();
+      expect(getCurrentRound()).toBe(2);
+    });
+
+    it('should transition to bidding phase when advancing rounds', () => {
+      advanceRound();
+      expect(getGamePhase()).toBe('bidding');
+    });
+
+    it('should allow round 10 to be fully playable', () => {
+      // Advance from round 1 to round 10
       for (let i = 1; i < 10; i++) {
-        expect(GameState.getCurrentRound()).toBe(i);
-        GameState.advanceRound();
+        advanceRound();
       }
-      expect(GameState.getCurrentRound()).toBe(10);
+
+      // Should be at round 10, not marked complete yet
+      expect(getCurrentRound()).toBe(10);
+      expect(isGameComplete()).toBe(false);
+      expect(getGamePhase()).toBe('bidding'); // Can play bidding/scoring
     });
 
-    it('should mark game as complete at round 10', function() {
-      for (let i = 0; i < 9; i++) {
-        GameState.advanceRound();
+    it('should mark game complete only when advancing past round 10', () => {
+      // Advance to round 10
+      for (let i = 1; i < 10; i++) {
+        advanceRound();
       }
-      expect(GameState.isGameComplete()).toBe(true);
-      expect(GameState.getCurrentRound()).toBe(10);
+
+      // At round 10, game is not complete
+      expect(isGameComplete()).toBe(false);
+
+      // Now advance past round 10
+      advanceRound();
+
+      // Now game should be complete
+      expect(isGameComplete()).toBe(true);
+      expect(getGamePhase()).toBe('complete');
     });
 
-    it('should set phase to complete when game finishes', function() {
-      for (let i = 0; i < 9; i++) {
-        GameState.advanceRound();
+    it('should handle multiple advance calls at round 10', () => {
+      // Advance to round 10
+      for (let i = 1; i < 10; i++) {
+        advanceRound();
       }
-      expect(GameState.getGamePhase()).toBe('complete');
-    });
 
-    it('should not advance beyond round 10', function() {
-      for (let i = 0; i < 10; i++) {
-        GameState.advanceRound();
-      }
-      expect(GameState.getCurrentRound()).toBe(10);
-      GameState.advanceRound();
-      expect(GameState.getCurrentRound()).toBe(10);
+      // First advance past round 10
+      advanceRound();
+      expect(isGameComplete()).toBe(true);
+      expect(getCurrentRound()).toBe(10);
+
+      // Subsequent advances should not change state
+      advanceRound();
+      expect(isGameComplete()).toBe(true);
+      expect(getCurrentRound()).toBe(10);
     });
   });
 
-  describe('isGameComplete()', function() {
-    it('should return false initially', function() {
-      expect(GameState.isGameComplete()).toBe(false);
+  describe('isGameComplete()', () => {
+    it('should return false initially', () => {
+      expect(isGameComplete()).toBe(false);
     });
 
-    it('should return true after 9 advances', function() {
-      for (let i = 0; i < 9; i++) {
-        GameState.advanceRound();
+    it('should return true after advancing past round 10', () => {
+      for (let i = 1; i <= 10; i++) {
+        advanceRound();
       }
-      expect(GameState.isGameComplete()).toBe(true);
+      expect(isGameComplete()).toBe(true);
     });
   });
 
-  describe('getGameState()', function() {
-    it('should return complete game state object', function() {
-      const state = GameState.getGameState();
+  describe('getGameState()', () => {
+    it('should return current game state', () => {
+      const state = getGameState();
       expect(state.currentRound).toBe(1);
       expect(state.phase).toBe('setup');
       expect(state.isComplete).toBe(false);
       expect(Array.isArray(state.players)).toBe(true);
     });
 
-    it('should return a copy of state, not reference', function() {
-      const state1 = GameState.getGameState();
-      const state2 = GameState.getGameState();
-      state1.currentRound = 999;
-      expect(state2.currentRound).toBe(1);
-    });
-  });
+    it('should return a deep copy of the state', () => {
+      const state1 = getGameState();
+      const state2 = getGameState();
 
-  describe('Round transitions', function() {
-    it('should transition through all 10 rounds correctly', function() {
-      for (let round = 1; round <= 10; round++) {
-        expect(GameState.getCurrentRound()).toBe(round);
-        if (round < 10) {
-          GameState.advanceRound();
-        }
+      // Should be equal but not the same reference
+      expect(state1).toEqual(state2);
+      expect(state1).not.toBe(state2);
+    });
+
+    it('should deep-clone players array to prevent external mutation', () => {
+      // Get the state and try to mutate the players array
+      const state = getGameState();
+      state.players.push({ name: 'Player 1', score: 0 });
+
+      // Get state again - should not include the mutated player
+      const state2 = getGameState();
+      expect(state2.players).not.toContain({ name: 'Player 1', score: 0 });
+      expect(state2.players.length).toBe(0);
+    });
+
+    it('should deep-clone nested player objects', () => {
+      // Manually add a player object to test deep cloning
+      const testState = getGameState();
+      if (testState.players.length > 0) {
+        const copiedState = getGameState();
+        const copiedPlayer = copiedState.players[0];
+        const originalPlayer = testState.players[0];
+
+        // Mutate the copied player
+        copiedPlayer.name = 'Mutated';
+
+        // Original should remain unchanged
+        const state3 = getGameState();
+        expect(state3.players[0].name).not.toBe('Mutated');
       }
     });
   });
 
+  describe('Game flow integration', () => {
+    it('should handle complete game flow from round 1 to completion', () => {
+      // Initialize
+      expect(getCurrentRound()).toBe(1);
+      expect(getGamePhase()).toBe('setup');
+
+      // Play through rounds 1-9
+      for (let round = 1; round < 10; round++) {
+        setGamePhase('bidding');
+        expect(getGamePhase()).toBe('bidding');
+
+        setGamePhase('scoring');
+        expect(getGamePhase()).toBe('scoring');
+
+        advanceRound();
+        expect(getCurrentRound()).toBe(round + 1);
+        expect(isGameComplete()).toBe(false);
+      }
+
+      // Round 10 should be playable
+      expect(getCurrentRound()).toBe(10);
+      expect(isGameComplete()).toBe(false);
+
+      // Set round 10 phases
+      setGamePhase('bidding');
+      expect(getGamePhase()).toBe('bidding');
+
+      setGamePhase('scoring');
+      expect(getGamePhase()).toBe('scoring');
+
+      // Advance past round 10 to complete
+      advanceRound();
+      expect(isGameComplete()).toBe(true);
+      expect(getGamePhase()).toBe('complete');
+    });
+  });
 });

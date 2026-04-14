@@ -1,108 +1,122 @@
 /**
- * gameState.js - Core game state management
- * Manages game rounds (1-10), phases (setup/bidding/scoring/complete), and player data
+ * Game State Management Module
+ * Manages core game state including rounds (1-10), phases, and game completion
  */
 
-(function() {
-  // Private gameState object
-  let gameState = {
-    currentRound: 1,
-    phase: 'setup',
-    players: [],
-    isComplete: false
-  };
+// Initialize the game state object
+const gameState = {
+  currentRound: 0,
+  phase: 'setup', // 'setup', 'bidding', 'scoring', 'complete'
+  players: [],
+  isComplete: false
+};
 
-  // Valid phases for the game
-  const VALID_PHASES = ['setup', 'bidding', 'scoring', 'complete'];
-  const MAX_ROUNDS = 10;
-  const MIN_ROUNDS = 1;
+/**
+ * Initialize the game to starting state
+ * Resets round to 1, phase to 'setup', clears players array, and marks game as not complete
+ */
+function initializeGame() {
+  gameState.currentRound = 1;
+  gameState.phase = 'setup';
+  gameState.players = [];
+  gameState.isComplete = false;
+}
 
-  /**
-   * Initialize game to default state
-   * Resets to round 1, setup phase, clears players
-   */
-  function initializeGame() {
-    gameState = {
-      currentRound: MIN_ROUNDS,
-      phase: 'setup',
-      players: [],
-      isComplete: false
-    };
-    return getGameState();
-  }
+/**
+ * Get the current round number (1-10)
+ * @returns {number} Current round number
+ */
+function getCurrentRound() {
+  return gameState.currentRound;
+}
 
-  /**
-   * Get the current round number (1-10)
-   * @returns {number} Current round
-   */
-  function getCurrentRound() {
-    return gameState.currentRound;
-  }
-
-  /**
-   * Set the game phase
-   * @param {string} newPhase - Valid phases: setup, bidding, scoring, complete
-   * @throws {Error} If phase is invalid
-   */
-  function setGamePhase(newPhase) {
-    if (!VALID_PHASES.includes(newPhase)) {
-      throw new Error(`Invalid phase: ${newPhase}. Valid phases are: ${VALID_PHASES.join(', ')}`);
-    }
+/**
+ * Set the game phase
+ * @param {string} newPhase - The phase to set: 'setup', 'bidding', 'scoring', or 'complete'
+ */
+function setGamePhase(newPhase) {
+  if (['setup', 'bidding', 'scoring', 'complete'].includes(newPhase)) {
     gameState.phase = newPhase;
   }
+}
 
-  /**
-   * Get the current game phase
-   * @returns {string} Current phase
-   */
-  function getGamePhase() {
-    return gameState.phase;
-  }
+/**
+ * Get the current game phase
+ * @returns {string} Current phase: 'setup', 'bidding', 'scoring', or 'complete'
+ */
+function getGamePhase() {
+  return gameState.phase;
+}
 
-  /**
-   * Advance to the next round
-   * Handles game completion when round exceeds MAX_ROUNDS
-   * @returns {boolean} True if game is complete, false otherwise
-   */
-  function advanceRound() {
-    if (gameState.currentRound >= MAX_ROUNDS) {
-      gameState.currentRound = MAX_ROUNDS;
-      gameState.isComplete = true;
-      gameState.phase = 'complete';
-      return true;
-    }
+/**
+ * Advance to the next round
+ * Increments currentRound. Marks game complete only when attempting to advance past round 10.
+ * This allows round 10 to be fully playable with its own phases.
+ */
+function advanceRound() {
+  if (gameState.currentRound < 10) {
     gameState.currentRound += 1;
-    if (gameState.currentRound === MAX_ROUNDS) {
-      // On the last round, mark as complete after advancing
-      gameState.isComplete = true;
-      gameState.phase = 'complete';
-      return true;
-    }
-    return false;
+    // Transition to bidding phase for the new round
+    gameState.phase = 'bidding';
+  } else if (gameState.currentRound === 10) {
+    // Attempting to advance past round 10 - mark game complete
+    gameState.isComplete = true;
+    gameState.phase = 'complete';
   }
+  // If currentRound > 10, do nothing (already complete)
+}
 
-  /**
-   * Check if the game is complete
-   * @returns {boolean} True if game is complete, false otherwise
-   */
-  function isGameComplete() {
-    return gameState.isComplete;
-  }
+/**
+ * Check if the game is complete
+ * @returns {boolean} True if game is complete, false otherwise
+ */
+function isGameComplete() {
+  return gameState.isComplete;
+}
 
-  /**
-   * Get the current game state
-   * @returns {object} Copy of the current game state
-   */
-  function getGameState() {
-    return {
-      currentRound: gameState.currentRound,
-      phase: gameState.phase,
-      players: [...gameState.players],
-      isComplete: gameState.isComplete
-    };
-  }
+/**
+ * Get a deep copy of the current game state
+ * Uses structuredClone to ensure nested objects (players) are fully cloned
+ * preventing external mutations from corrupting internal state
+ * @returns {object} Deep copy of gameState with properties: currentRound, phase, players array, isComplete
+ */
+function getGameState() {
+  // Use structuredClone for deep copying of nested objects
+  return structuredClone({
+    currentRound: gameState.currentRound,
+    phase: gameState.phase,
+    players: gameState.players,
+    isComplete: gameState.isComplete
+  });
+}
 
-  // Export functions as a module
+// Export for ES modules and browser environments
+if (typeof module !== 'undefined' && module.exports) {
+  // Node.js / CommonJS
+  module.exports = {
+    initializeGame,
+    getCurrentRound,
+    setGamePhase,
+    getGamePhase,
+    advanceRound,
+    isGameComplete,
+    getGameState
+  };
+}
+
+// Also export as ES modules
+if (typeof exports !== 'undefined') {
+  exports.initializeGame = initializeGame;
+  exports.getCurrentRound = getCurrentRound;
+  exports.setGamePhase = setGamePhase;
+  exports.getGamePhase = getGamePhase;
+  exports.advanceRound = advanceRound;
+  exports.isGameComplete = isGameComplete;
+  exports.getGameState = getGameState;
+}
+
+// Export to window for browser environment
+if (typeof window !== 'undefined') {
   window.GameState = {
     initializeGame,
     getCurrentRound,
@@ -112,4 +126,4 @@
     isGameComplete,
     getGameState
   };
-})();
+}
