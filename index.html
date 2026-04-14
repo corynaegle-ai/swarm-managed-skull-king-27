@@ -14,9 +14,33 @@
     </header>
 
     <main class="app-main">
-      <!-- Bid Phase Container -->
-      <section id="bid-phase-container" class="bid-phase-container">
-        <!-- Bid interface will be rendered here dynamically -->
+      <!-- Round Info Container -->
+      <section id="round-info-container" class="round-info-container">
+        <div id="round-display"></div>
+      </section>
+
+      <!-- Game Phase Container -->
+      <section id="game-phase-container" class="game-phase-container">
+        <!-- Bid Phase Container -->
+        <div id="bid-phase-container" class="bid-phase-container">
+          <!-- Bid interface will be rendered here dynamically -->
+        </div>
+
+        <!-- Scoring Phase Container -->
+        <div id="scoring-phase-container" class="scoring-phase-container" style="display: none;">
+          <!-- Scoring interface will be rendered here dynamically -->
+        </div>
+      </section>
+
+      <!-- Player Scores Container -->
+      <section id="player-scores-container" class="player-scores-container">
+        <h2>Player Scores</h2>
+        <div id="scores-display"></div>
+      </section>
+
+      <!-- Final Scores Container -->
+      <section id="final-scores-container" class="final-scores-container" style="display: none;">
+        <div id="final-scores-display"></div>
       </section>
     </main>
 
@@ -25,6 +49,7 @@
     </footer>
   </div>
 
-  <script src="js/bid-phase.js"></script>
+  <script type="module" src="js/bid-phase.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

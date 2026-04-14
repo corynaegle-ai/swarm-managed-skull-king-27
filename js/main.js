@@ -1,4 +1,225 @@
-/**
+import { showBidPhase } from './bid-phase.js';
+
+// Game state management
+const gameState = {
+  currentRound: 1,
+  maxRounds: 10,
+  players: [],
+  currentPhase: 'setup', // setup, bidding, scoring, complete
+  bids: [], // array of {playerId, bidAmount}
+  tricks: [], // array of trick results
+  scores: {}, // {playerId: totalScore}
+};
+
+// Initialize game
+function handleNewGame() {
+  // Reset game state
+  gameState.currentRound = 1;
+  gameState.currentPhase = 'setup';
+  gameState.bids = [];
+  gameState.tricks = [];
+  
+  // Initialize players (assuming 4 players for Skull King)
+  gameState.players = [
+    { id: 1, name: 'Player 1' },
+    { id: 2, name: 'Player 2' },
+    { id: 3, name: 'Player 3' },
+    { id: 4, name: 'Player 4' }
+  ];
+  
+  // Initialize scores
+  gameState.players.forEach(player => {
+    gameState.scores[player.id] = 0;
+  });
+  
+  renderRoundInfo();
+  transitionToPhase('bidding');
+}
+
+// Render round information
+function renderRoundInfo() {
+  const roundDisplay = document.getElementById('round-display');
+  if (roundDisplay) {
+    roundDisplay.innerHTML = `
+      <div class="round-header">
+        <h2>Round ${gameState.currentRound} of ${gameState.maxRounds}</h2>
+        <p>Phase: ${gameState.currentPhase.charAt(0).toUpperCase() + gameState.currentPhase.slice(1)}</p>
+      </div>
+    `;
+  }
+}
+
+// Render player scores
+function renderPlayerScores() {
+  const scoresDisplay = document.getElementById('scores-display');
+  if (scoresDisplay) {
+    const scoresHtml = gameState.players.map(player => `
+      <div class="player-score-row">
+        <span class="player-name">${player.name}</span>
+        <span class="player-score">${gameState.scores[player.id]}</span>
+      </div>
+    `).join('');
+    
+    scoresDisplay.innerHTML = `
+      <table class="scores-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${scoresHtml}
+        </tbody>
+      </table>
+    `;
+  }
+}
+
+// Render game phase specific content
+function renderGamePhase() {
+  const bidPhaseContainer = document.getElementById('bid-phase-container');
+  const scoringPhaseContainer = document.getElementById('scoring-phase-container');
+  
+  if (gameState.currentPhase === 'bidding') {
+    if (bidPhaseContainer) bidPhaseContainer.style.display = 'block';
+    if (scoringPhaseContainer) scoringPhaseContainer.style.display = 'none';
+  } else if (gameState.currentPhase === 'scoring') {
+    if (bidPhaseContainer) bidPhaseContainer.style.display = 'none';
+    if (scoringPhaseContainer) scoringPhaseContainer.style.display = 'block';
+  }
+}
+
+// Render final scores
+function renderFinalScores() {
+  const finalScoresContainer = document.getElementById('final-scores-container');
+  const gamePhaseContainer = document.getElementById('game-phase-container');
+  
+  if (finalScoresContainer && gamePhaseContainer) {
+    gamePhaseContainer.style.display = 'none';
+    finalScoresContainer.style.display = 'block';
+    
+    const sortedPlayers = [...gameState.players].sort((a, b) => 
+      gameState.scores[b.id] - gameState.scores[a.id]
+    );
+    
+    const finalScoresHtml = sortedPlayers.map((player, index) => `
+      <div class="final-score-row" data-rank="${index + 1}">
+        <span class="rank">${index + 1}.</span>
+        <span class="player-name">${player.name}</span>
+        <span class="final-score">${gameState.scores[player.id]}</span>
+      </div>
+    `).join('');
+    
+    const finalScoresDisplay = document.getElementById('final-scores-display');
+    if (finalScoresDisplay) {
+      finalScoresDisplay.innerHTML = `
+        <h2>Final Scores</h2>
+        <div class="final-scores-list">
+          ${finalScoresHtml}
+        </div>
+        <button id="new-game-btn" class="btn-primary">Start New Game</button>
+      `;
+      
+      document.getElementById('new-game-btn').addEventListener('click', handleNewGame);
+    }
+  }
+}
+
+// Transition between game phases
+function transitionToPhase(newPhase) {
+  gameState.currentPhase = newPhase;
+  renderRoundInfo();
+  renderGamePhase();
+  
+  if (newPhase === 'bidding') {
+    initiateBiddingPhase();
+  } else if (newPhase === 'scoring') {
+    displayBidSummary();
+  }
+}
+
+// Initiate the bidding phase
+function initiateBiddingPhase() {
+  gameState.bids = [];
+  showBidPhase(gameState.players, gameState.currentRound, handleBidSubmitted);
+}
+
+// Handle bid submission from bid-phase.js
+function handleBidSubmitted(bids) {
+  gameState.bids = bids; // array of {playerId, bidAmount}
+  transitionToPhase('scoring');
+}
+
+// Display bid summary before scoring
+function displayBidSummary() {
+  const scoringPhaseContainer = document.getElementById('scoring-phase-container');
+  if (scoringPhaseContainer) {
+    const bidSummaryHtml = gameState.bids.map(bid => {
+      const player = gameState.players.find(p => p.id === bid.playerId);
+      return `
+        <div class="bid-summary-row">
+          <span class="player-name">${player.name}</span>
+          <span class="bid-amount">Bid: ${bid.bidAmount}</span>
+        </div>
+      `;
+    }).join('');
+    
+    scoringPhaseContainer.innerHTML = `
+      <div class="bid-summary">
+        <h2>Round ${gameState.currentRound} - Bid Summary</h2>
+        <div class="bids-list">
+          ${bidSummaryHtml}
+        </div>
+        <button id="continue-to-scoring-btn" class="btn-primary">Continue to Scoring</button>
+      </div>
+    `;
+    
+    document.getElementById('continue-to-scoring-btn').addEventListener('click', () => {
+      // TODO: Implement actual scoring logic
+      proceedToNextRound();
+    });
+  }
+}
+
+// Proceed to next round or end game
+function proceedToNextRound() {
+  if (gameState.currentRound < gameState.maxRounds) {
+    gameState.currentRound++;
+    gameState.bids = [];
+    gameState.tricks = [];
+    transitionToPhase('bidding');
+  } else {
+    gameState.currentPhase = 'complete';
+    renderPlayerScores();
+    renderFinalScores();
+  }
+}
+
+// Update game status display
+function updateGameStatus(message) {
+  const gameStatus = document.getElementById('game-status');
+  if (gameStatus) {
+    gameStatus.textContent = message;
+  }
+}
+
+// Event listeners for phase transitions
+document.addEventListener('bidSubmitted', (e) => {
+  handleBidSubmitted(e.detail.bids);
+});
+
+document.addEventListener('phaseComplete', (e) => {
+  transitionToPhase(e.detail.nextPhase);
+});
+
+// Initialize game on page load
+window.addEventListener('DOMContentLoaded', () => {
+  handleNewGame();
+});
+
+// Export functions for external use
+export { handleNewGame, transitionToPhase, displayBidSummary, gameState };/**
  * main.js - Main game flow orchestrator for Skull King
  * Integrates bid collection phase with game state management
  */
