@@ -1,4 +1,278 @@
 /**
+ * Scoring Page Script
+ * Handles score calculation, form validation, and navigation
+ */
+
+// Game state (would typically come from game controller)
+let gameState = {
+    currentRound: 1,
+    totalRounds: 13,
+    players: [
+        { id: 1, name: 'Player 1', bid: 5 },
+        { id: 2, name: 'Player 2', bid: 6 },
+        { id: 3, name: 'Player 3', bid: 4 },
+        { id: 4, name: 'Player 4', bid: 7 }
+    ],
+    scores: {}
+};
+
+/**
+ * Initialize the scoring page with player cards
+ */
+function initializeScoringPage() {
+    renderPlayerCards();
+    updateNavigationButtons();
+    attachEventListeners();
+}
+
+/**
+ * Render player cards with input fields
+ */
+function renderPlayerCards() {
+    const playersGrid = document.getElementById('playersGrid');
+    playersGrid.innerHTML = '';
+
+    gameState.players.forEach((player) => {
+        const playerCard = createPlayerCard(player);
+        playersGrid.appendChild(playerCard);
+    });
+}
+
+/**
+ * Create a player card element with form inputs
+ * @param {Object} player - Player object with id, name, bid
+ * @returns {HTMLElement} Player card element
+ */
+function createPlayerCard(player) {
+    const card = document.createElement('div');
+    card.className = 'player-card';
+    card.setAttribute('data-player-id', player.id);
+
+    const maxTricks = 13; // Standard Hearts deck
+
+    card.innerHTML = `
+        <div class="player-name">${escapeHtml(player.name)}</div>
+        
+        <div class="bid-display">
+            <span class="bid-label">Bid:</span>
+            <span class="bid-value">${player.bid}</span>
+        </div>
+
+        <div class="form-group">
+            <label for="tricks-${player.id}">
+                <span>Tricks Taken</span>
+                <span class="input-hint">(0-${maxTricks})</span>
+            </label>
+            <input 
+                type="number" 
+                id="tricks-${player.id}" 
+                name="tricks-${player.id}" 
+                min="0" 
+                max="${maxTricks}"
+                value="0" 
+                required
+                aria-label="Tricks taken by ${player.name}"
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="bonus-${player.id}">
+                <span>Bonus Points</span>
+                <span class="input-hint">(default: 0)</span>
+            </label>
+            <input 
+                type="number" 
+                id="bonus-${player.id}" 
+                name="bonus-${player.id}" 
+                min="0" 
+                value="0" 
+                aria-label="Bonus points for ${player.name}"
+            />
+        </div>
+
+        <div class="score-display">
+            <div class="score-label">Calculated Score</div>
+            <div class="score-value" data-score-value="${player.id}">0</div>
+        </div>
+    `;
+
+    // Add event listeners for real-time score calculation
+    const tricksInput = card.querySelector(`#tricks-${player.id}`);
+    const bonusInput = card.querySelector(`#bonus-${player.id}`);
+
+    tricksInput.addEventListener('change', () => calculateScore(player.id));
+    bonusInput.addEventListener('change', () => calculateScore(player.id));
+
+    return card;
+}
+
+/**
+ * Calculate score based on tricks and bonus points
+ * Score = tricks - bid + bonus (penalties for missing bid apply)
+ * @param {number} playerId - Player ID
+ */
+function calculateScore(playerId) {
+    const player = gameState.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    const tricksInput = document.getElementById(`tricks-${playerId}`);
+    const bonusInput = document.getElementById(`bonus-${playerId}`);
+    const scoreDisplay = document.querySelector(`[data-score-value="${playerId}"]`);
+
+    const tricks = parseInt(tricksInput.value) || 0;
+    const bonus = parseInt(bonusInput.value) || 0;
+
+    // Basic scoring: tricks - bid + bonus
+    let score = tricks - player.bid + bonus;
+
+    // Penalty for missing bid (negative score if tricks < bid)
+    if (tricks < player.bid) {
+        score = -(player.bid - tricks) + bonus;
+    }
+
+    scoreDisplay.textContent = score;
+
+    // Store the calculated score
+    if (!gameState.scores[playerId]) {
+        gameState.scores[playerId] = {};
+    }
+    gameState.scores[playerId][gameState.currentRound] = {
+        bid: player.bid,
+        tricks: tricks,
+        bonus: bonus,
+        score: score
+    };
+
+    // Update submit button state
+    updateSubmitButtonState();
+}
+
+/**
+ * Update submit button disabled state based on form validity
+ */
+function updateSubmitButtonState() {
+    const form = document.getElementById('scoringForm');
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = !form.checkValidity();
+}
+
+/**
+ * Update navigation button states
+ */
+function updateNavigationButtons() {
+    const prevBtn = document.getElementById('prevRoundBtn');
+    const nextBtn = document.getElementById('nextRoundBtn');
+
+    prevBtn.disabled = gameState.currentRound <= 1;
+    nextBtn.disabled = gameState.currentRound >= gameState.totalRounds;
+}
+
+/**
+ * Attach event listeners to form and navigation elements
+ */
+function attachEventListeners() {
+    const form = document.getElementById('scoringForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const prevRoundBtn = document.getElementById('prevRoundBtn');
+    const nextRoundBtn = document.getElementById('nextRoundBtn');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleSubmit();
+    });
+
+    resetBtn.addEventListener('click', () => {
+        form.reset();
+        // Recalculate scores after reset
+        gameState.players.forEach(player => {
+            calculateScore(player.id);
+        });
+    });
+
+    prevRoundBtn.addEventListener('click', () => {
+        if (gameState.currentRound > 1) {
+            gameState.currentRound--;
+            updateRoundDisplay();
+            updateNavigationButtons();
+        }
+    });
+
+    nextRoundBtn.addEventListener('click', () => {
+        if (gameState.currentRound < gameState.totalRounds) {
+            gameState.currentRound++;
+            updateRoundDisplay();
+            updateNavigationButtons();
+        }
+    });
+}
+
+/**
+ * Update round display elements
+ */
+function updateRoundDisplay() {
+    document.getElementById('currentRound').textContent = gameState.currentRound;
+    document.getElementById('roundDisplay').textContent = `Round ${gameState.currentRound}`;
+}
+
+/**
+ * Handle form submission
+ */
+function handleSubmit() {
+    const form = document.getElementById('scoringForm');
+
+    if (!form.checkValidity()) {
+        alert('Please fill in all required fields with valid values.');
+        return;
+    }
+
+    // Collect all scores
+    const roundScores = {};
+    gameState.players.forEach(player => {
+        const tricks = parseInt(document.getElementById(`tricks-${player.id}`).value) || 0;
+        const bonus = parseInt(document.getElementById(`bonus-${player.id}`).value) || 0;
+
+        roundScores[player.id] = {
+            bid: player.bid,
+            tricks: tricks,
+            bonus: bonus,
+            score: gameState.scores[player.id]?.[gameState.currentRound]?.score || 0
+        };
+    });
+
+    // Dispatch event or call handler to process scores
+    console.log(`Round ${gameState.currentRound} scores submitted:`, roundScores);
+
+    // TODO: Send to game controller or API
+    // gameController.submitRoundScores(gameState.currentRound, roundScores);
+
+    alert('Scores submitted successfully!');
+    form.reset();
+}
+
+/**
+ * Escape HTML special characters for security
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, (char) => map[char]);
+}
+
+// Initialize page when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeScoringPage);
+} else {
+    initializeScoringPage();
+}
+/**
  * Scoring Interface Module
  *
  * Handles the initialization and management of the round scoring interface.
