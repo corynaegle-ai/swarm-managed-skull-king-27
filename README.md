@@ -29,8 +29,8 @@ console.log(game.totalScore); // 190
 ### Scoring Rules Summary
 
 **Non-Zero Bids:**
-- Exact: +20 × tricks + 10 × hands (automatic bonus)
-- Missed: -10 × difference from bid
+- Exact: +20 per trick taken, plus automatic bonus of +10 × hands
+- Missed: -10 per difference from bid (no bonus applied)
 
 **Zero Bids:**
 - Exact (0 tricks): +10 × hands

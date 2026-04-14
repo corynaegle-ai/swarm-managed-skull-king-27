@@ -127,7 +127,7 @@ const isCorrect = validateRoundScoring(5, 5, 1, 110);
 
 ### Key Decisions
 
-1. **Bonus Automation**: Bonus points are automatically calculated and applied when the criteria are met. The function signature is simple (3 parameters for round score) without requiring bonus as a separate player-entered parameter.
+1. **Bonus Automation**: Bonus points are automatically calculated and applied when the criteria are met. The bonus is NOT a user-entered parameter but is computed automatically: when a non-zero bid is exactly met, the engine automatically adds +10 × hands. The function signature is simple (3 parameters for round score: bid, tricks, hands) with no separate bonus parameter.
 
 2. **Zero Bid Rules**: Zero bids follow a distinct scoring path with no bonus application, simplifying the logic and preventing confusion.
 
