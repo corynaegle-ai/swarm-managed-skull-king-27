@@ -20,10 +20,14 @@ export class BidCollectionPhase {
    * Returns the final bids map when all players have confirmed
    */
   async execute(): Promise<Map<string, number>> {
-    this.displayRoundInfo();
-    await this.collectBidsFromAllPlayers();
-    this.displayBidSummary();
-    return this.playerBids;
+    try {
+      this.displayRoundInfo();
+      await this.collectBidsFromAllPlayers();
+      this.displayBidSummary();
+      return this.playerBids;
+    } finally {
+      this.bidCollector.close();
+    }
   }
 
   /**

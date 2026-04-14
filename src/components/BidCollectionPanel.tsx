@@ -42,7 +42,7 @@ const BidCollectionPanel: React.FC<BidCollectionPanelProps> = ({
 
   // Validate bid input
   const validateBid = (bid: number | null, playerId: string): string => {
-    if (bid === null || bid === undefined || bid === '') {
+    if (bid === null || bid === undefined) {
       return 'Bid is required';
     }
 

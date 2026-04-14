@@ -46,7 +46,7 @@ export const useBidCollection = (playerIds: string[]): UseBidCollectionResult =>
     });
     setBids(newBids);
     setConfirmed(newConfirmed);
-  }, [playerIds.length]); // Only re-run if number of players changes
+  }, [playerIds]); // Re-run when playerIds array changes
 
   const setBid = useCallback((playerId: string, bid: number | null) => {
     setBids((prev) => ({ ...prev, [playerId]: bid }));
