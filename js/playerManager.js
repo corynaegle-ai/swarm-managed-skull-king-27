@@ -1,120 +1,141 @@
-import { getCurrentRound } from './gameState.js';
+import { getCurrentRound, nextRound } from './gameState.js';
 
-// Player storage and ID management
+// In-memory player storage
 let players = [];
-let playerIdCounter = 0;
+
+/**
+ * Generate a UUID v4-like unique ID for players
+ * @returns {string} A unique identifier
+ */
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
+ * Create a deep copy of a player object (excluding scores map for now)
+ * @param {Object} player - The player to copy
+ * @returns {Object} A deep copy of the player
+ */
+function copyPlayer(player) {
+  return {
+    id: player.id,
+    name: player.name,
+    scores: new Map(player.scores), // Deep copy of the Map
+    totalScore: player.totalScore
+  };
+}
 
 /**
  * Add a new player to the game
- * @param {string} name - Player name
- * @returns {object} Created player object with id, name, scores array, and totalScore
+ * @param {string} name - The name of the player
+ * @returns {Object} The created player object
  */
 export function addPlayer(name) {
-  if (!name || typeof name !== 'string') {
+  if (!name || typeof name !== 'string' || name.trim() === '') {
     throw new Error('Player name must be a non-empty string');
   }
 
-  const player = {
-    id: playerIdCounter++,
+  const newPlayer = {
+    id: generateUUID(),
     name: name.trim(),
-    scores: [],
-    totalScore: 0,
+    scores: new Map(), // Map<roundNumber, score>
+    totalScore: 0
   };
 
-  players.push(player);
-  return player;
+  players.push(newPlayer);
+  return copyPlayer(newPlayer);
 }
 
 /**
- * Remove a player from the game by id
- * @param {number} id - Player id
- * @returns {boolean} True if player was removed, false otherwise
+ * Remove a player from the game
+ * @param {string} id - The player ID to remove
+ * @returns {boolean} True if player was removed, false if not found
  */
 export function removePlayer(id) {
-  if (typeof id !== 'number' || !Number.isInteger(id) || id < 0) {
-    throw new Error('Player id must be a non-negative integer');
+  const index = players.findIndex(p => p.id === id);
+  if (index === -1) {
+    return false;
   }
-
-  const initialLength = players.length;
-  players = players.filter((player) => player.id !== id);
-  return players.length < initialLength;
+  players.splice(index, 1);
+  return true;
 }
 
 /**
- * Get a player by id
- * @param {number} id - Player id
- * @returns {object|null} Player object or null if not found
+ * Get a specific player by ID
+ * @param {string} id - The player ID
+ * @returns {Object|null} A copy of the player object, or null if not found
  */
 export function getPlayer(id) {
-  if (typeof id !== 'number' || !Number.isInteger(id) || id < 0) {
-    throw new Error('Player id must be a non-negative integer');
-  }
-
-  return players.find((player) => player.id === id) || null;
+  const player = players.find(p => p.id === id);
+  return player ? copyPlayer(player) : null;
 }
 
 /**
  * Get all players
- * @returns {array} Array of all player objects
+ * @returns {Array} An array of deep copies of all players
  */
 export function getAllPlayers() {
-  return [...players];
+  return players.map(player => copyPlayer(player));
 }
 
 /**
  * Update a player's score for the current round
- * @param {number} playerId - Player id
- * @param {number} roundScore - Score for this round
+ * @param {string} playerId - The player ID
+ * @param {number} roundScore - The score for this round (can be negative)
+ * @returns {Object} The updated player object
  */
 export function updatePlayerScore(playerId, roundScore) {
-  if (typeof playerId !== 'number' || !Number.isInteger(playerId) || playerId < 0) {
-    throw new Error('Player id must be a non-negative integer');
+  if (typeof roundScore !== 'number') {
+    throw new Error('Round score must be a number');
   }
 
-  if (typeof roundScore !== 'number' || roundScore < 0) {
-    throw new Error('Round score must be a non-negative number');
-  }
-
-  const player = getPlayer(playerId);
+  const player = players.find(p => p.id === playerId);
   if (!player) {
-    throw new Error(`Player with id ${playerId} not found`);
+    throw new Error(`Player with ID ${playerId} not found`);
   }
 
   const currentRound = getCurrentRound();
-  
-  // Extend scores array if necessary to fill gaps
-  while (player.scores.length <= currentRound) {
-    player.scores.push(undefined);
-  }
-  
-  // Set the score for the current round
-  player.scores[currentRound] = roundScore;
-  
-  // Recalculate totalScore: filter out undefined values and sum
-  player.totalScore = player.scores.filter((score) => score !== undefined).reduce((sum, score) => sum + score, 0);
+
+  // Store the score for this round in the Map
+  // This allows negative scores and ensures one score per round
+  player.scores.set(currentRound, roundScore);
+
+  // Recalculate total score by summing all stored scores
+  player.totalScore = Array.from(player.scores.values()).reduce(
+    (sum, score) => sum + score,
+    0
+  );
+
+  return copyPlayer(player);
 }
 
 /**
- * Calculate and return all players sorted by total score (descending)
- * @returns {array} Array of players sorted by totalScore in descending order
+ * Calculate final scores for all players
+ * @returns {Array} Array of players sorted by total score (highest first)
  */
 export function calculateFinalScores() {
-  return players.slice().sort((a, b) => b.totalScore - a.totalScore);
+  // Create copies to avoid external mutation
+  const playerCopies = players.map(player => copyPlayer(player));
+
+  // Sort by totalScore in descending order (highest first)
+  return playerCopies.sort((a, b) => b.totalScore - a.totalScore);
 }
 
 /**
- * Clear all players (for testing/reset)
- * @internal
+ * Clear all players (used for resetting the game)
  */
 export function clearAllPlayers() {
   players = [];
-  playerIdCounter = 0;
 }
 
 /**
- * Reset the player ID counter (for testing isolation)
- * @internal
+ * Get the number of players in the game
+ * @returns {number} The count of players
  */
-export function resetPlayerIdCounter() {
-  playerIdCounter = 0;
+export function getPlayerCount() {
+  return players.length;
 }
