@@ -71,10 +71,10 @@ export class PlayerManager {
   }
 
   /**
-   * Check if game can start (minimum 2 players)
+   * Check if game can start (2-8 players required)
    */
   canStartGame(): boolean {
-    return this.players.size >= this.MIN_PLAYERS;
+    return this.players.size >= this.MIN_PLAYERS && this.players.size <= this.MAX_PLAYERS;
   }
 
   /**

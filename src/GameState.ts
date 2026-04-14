@@ -52,10 +52,11 @@ export class GameState {
   }
 
   /**
-   * Check if game can start
+   * Check if game can start (2-8 players required)
    */
   canStartGame(): boolean {
-    return this.playerManager.canStartGame();
+    const count = this.playerManager.getPlayerCount();
+    return count >= 2 && count <= 8;
   }
 
   /**
@@ -63,8 +64,11 @@ export class GameState {
    * @throws Error if cannot start game
    */
   startGame(): void {
-    if (!this.playerManager.canStartGame()) {
-      throw new Error('Cannot start game with fewer than 2 players');
+    const count = this.playerManager.getPlayerCount();
+    if (count < 2 || count > 8) {
+      throw new Error(
+        `Cannot start game with ${count} players. Must have between 2 and 8 players.`
+      );
     }
     this.phase = 'playing';
   }
