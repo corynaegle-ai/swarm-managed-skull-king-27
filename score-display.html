@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Score Display</title>
+  <link rel="stylesheet" href="css/score-display.css">
+</head>
+<body>
+  <div class="score-display-container">
+    <!-- Current Scores Section -->
+    <div class="current-scores-section">
+      <h2>Current Scores</h2>
+      <div class="leaderboard">
+        <div id="leaderboard-content" class="leaderboard-content">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Score History Section -->
+    <div class="history-section">
+      <h2>Score History</h2>
+      <div class="player-histories">
+        <div id="player-histories-content" class="player-histories-content">
+          <!-- Accordion items for each player -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/scoreDisplay.js"></script>
+  <script src="js/scoreDisplayUI.js"></script>
+</body>
+</html>
