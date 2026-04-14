@@ -1,4 +1,4 @@
-/* Global Styles */
+/* Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -6,70 +6,70 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1a1a1a;
-    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
+    color: #333;
+    background-color: #f9f9f9;
 }
 
 /* App Container */
 #app {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    max-width: 1200px;
-    margin: 0 auto;
-    background-color: #0f0f0f;
+    background-color: #fff;
 }
 
-/* Header Styles */
+/* Header */
 header {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    padding: 2rem;
+    background-color: #2c3e50;
+    color: #fff;
+    padding: 1.5rem;
     text-align: center;
-    border-bottom: 2px solid #FFD700;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 header h1 {
     font-size: 2.5rem;
-    color: #FFD700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    letter-spacing: 2px;
+    font-weight: 700;
+    letter-spacing: 1px;
 }
 
 /* Main Content */
 #main-content {
     flex: 1;
     padding: 2rem;
-    overflow-y: auto;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 /* Game Section */
 #game-section {
-    background-color: #1a1a1a;
-    border: 1px solid #444;
-    border-radius: 8px;
+    background-color: #f5f5f5;
     padding: 2rem;
-    min-height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
 }
 
 #game-section p {
     font-size: 1.1rem;
-    color: #999;
-    text-align: center;
+    color: #666;
 }
 
-/* Footer Styles */
+/* Footer */
 footer {
-    background-color: #0a0a0a;
-    padding: 1.5rem;
+    background-color: #2c3e50;
+    color: #fff;
     text-align: center;
-    border-top: 1px solid #444;
-    color: #666;
+    padding: 1.5rem;
+    margin-top: auto;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+footer p {
+    margin: 0;
     font-size: 0.9rem;
 }
 
@@ -78,31 +78,12 @@ footer {
     header h1 {
         font-size: 1.8rem;
     }
-
+    
     #main-content {
         padding: 1rem;
     }
-
+    
     #game-section {
-        padding: 1rem;
-        min-height: 200px;
+        padding: 1.5rem;
     }
-}
-
-/* Scrollbar Styling */
-#main-content::-webkit-scrollbar {
-    width: 10px;
-}
-
-#main-content::-webkit-scrollbar-track {
-    background: #1a1a1a;
-}
-
-#main-content::-webkit-scrollbar-thumb {
-    background: #FFD700;
-    border-radius: 5px;
-}
-
-#main-content::-webkit-scrollbar-thumb:hover {
-    background: #FFA500;
 }

@@ -1,117 +1,65 @@
 /**
- * Skull King - Main Application File
- * Initializes app state and sets up DOM manipulation
+ * Skull King - Main Application Entry Point
+ * Initializes app state and sets up DOM event listeners
  */
 
-(function() {
-    'use strict';
+// App State
+const appState = {
+    initialized: false,
+    gameStarted: false,
+    players: [],
+    currentRound: 0,
+    gameVersion: '1.0.0'
+};
 
-    // Application state
-    const appState = {
-        initialized: false,
-        gameStatus: 'idle',
-        players: [],
-        currentRound: 0,
-        version: '1.0.0'
-    };
+/**
+ * Initialize the application
+ */
+function initializeApp() {
+    try {
+        // Verify critical DOM elements exist
+        const appContainer = document.getElementById('app');
+        const mainContent = document.getElementById('main-content');
+        const gameSection = document.getElementById('game-section');
 
-    /**
-     * Initialize the application
-     */
-    function initializeApp() {
-        try {
-            // Verify required DOM elements exist
-            const requiredElements = ['app', 'main-content', 'game-section'];
-            const missingElements = requiredElements.filter(id => !document.getElementById(id));
-            
-            if (missingElements.length > 0) {
-                throw new Error(`Missing required DOM elements: ${missingElements.join(', ')}`);
-            }
-
-            // Set initial state
-            appState.initialized = true;
-            appState.gameStatus = 'ready';
-
-            // Log initialization
-            console.log('Skull King Application Initialized', appState);
-
-            // Call setup functions
-            setupEventListeners();
-            renderGameContent();
-
-        } catch (error) {
-            handleError('Initialization Error', error);
+        if (!appContainer || !mainContent || !gameSection) {
+            throw new Error('Critical DOM elements not found');
         }
+
+        // Mark app as initialized
+        appState.initialized = true;
+        appState.gameStarted = false;
+
+        // Log initialization success
+        console.log('Skull King app initialized successfully', appState);
+        
+        return true;
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
+        return false;
     }
+}
 
-    /**
-     * Set up event listeners for the application
-     */
-    function setupEventListeners() {
-        // Placeholder for future UI event listeners (click, input, submit, etc.)
-        // Do NOT add DOMContentLoaded listeners here—DOM is already loaded when this executes
-    }
-
-    /**
-     * Render initial game content
-     */
-    function renderGameContent() {
-        try {
-            const gameSection = document.getElementById('game-section');
-            if (!gameSection) {
-                throw new Error('game-section element not found');
-            }
-
-            // Create a welcome message without overwriting the container
-            const welcomeDiv = document.createElement('div');
-            welcomeDiv.className = 'game-welcome';
-            welcomeDiv.innerHTML = `
-                <h2>Welcome to Skull King</h2>
-                <p>A strategic card game for 2-6 players.</p>
-                <p>Game content loading...</p>
-            `;
-
-            // Only update content if game-section contains just the placeholder paragraph
-            if (gameSection.children.length === 1 && gameSection.children[0].tagName === 'P') {
-                gameSection.replaceChild(welcomeDiv, gameSection.children[0]);
-            }
-        } catch (error) {
-            handleError('Render Content Error', error);
+/**
+ * DOM Content Loaded Event
+ * Triggered when the DOM is fully parsed
+ */
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const success = initializeApp();
+        if (!success) {
+            console.error('Application initialization failed');
         }
+    });
+} else {
+    // DOM is already loaded (e.g., when script is deferred)
+    const success = initializeApp();
+    if (!success) {
+        console.error('Application initialization failed');
     }
+}
 
-    /**
-     * Get the current application state
-     * @returns {Object} Current app state
-     */
-    function getAppState() {
-        return { ...appState };
-    }
-
-    /**
-     * Handle errors gracefully
-     * @param {string} context - Error context
-     * @param {Error} error - Error object
-     */
-    function handleError(context, error) {
-        const errorMessage = `${context}: ${error.message}`;
-        console.error(errorMessage);
-        // Don't throw - allow app to continue running
-    }
-
-    /**
-     * Expose public API
-     */
-    window.SkullKingApp = {
-        getState: getAppState,
-        init: initializeApp
-    };
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    } else {
-        // DOM is already loaded (e.g., if script is loaded defer or async)
-        initializeApp();
-    }
-})();
+// Export for testing (if applicable)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { appState, initializeApp };
+}
