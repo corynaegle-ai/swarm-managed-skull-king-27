@@ -96,7 +96,7 @@ Score = -10 × 2 = -20 points (regardless of trick count)
 
 ### Bonus Points
 
-Bonus points are **only applied when the bid is exactly met**.
+Bonus points are **only applied when the bid is exactly met on non-zero bids**. Zero bids never receive bonus points.
 
 ```
 Example 1 (Applied):
@@ -107,9 +107,9 @@ Example 2 (Not Applied):
 bid=5, tricks=3, bonus=10
 Score = -10 × 2 = -20 points (bonus ignored)
 
-Example 3 (Applied on zero bid):
+Example 3 (Not Applied on zero bid):
 bid=0, tricks=0, hand=1, bonus=15
-Score = (10 × 1) + 15 = +25 points
+Score = 10 × 1 = +10 points (bonus not applied to zero bids)
 ```
 
 ## API Reference
@@ -199,11 +199,11 @@ calculateHandScore(5, 3, 1)
 // Explanation: Bid 5 tricks, got 3 → -10 × |5-3| = -10 × 2 = -20
 ```
 
-### Example 3: Exact Zero Bid (as documented)
+### Example 3: Exact Zero Bid
 ```javascript
-calculateHandScore(0, 0, 2, 5)
-// Result: baseScore=20, bonusApplied=5, totalScore=25
-// Explanation: Bid 0 on hand 2, took 0 tricks → 10 × 2 = +20, +5 bonus = +25
+calculateHandScore(0, 0, 2)
+// Result: baseScore=20, bonusApplied=0, totalScore=20
+// Explanation: Bid 0 on hand 2, took 0 tricks → 10 × 2 = +20 (no bonus on zero bids)
 ```
 
 ### Example 4: Missed Zero Bid
