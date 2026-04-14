@@ -1,13 +1,9 @@
-import { BidCollectionService } from '../services/BidCollectionService';
-import { PlayerBidInput } from '../services/BidCollectionService';
+import { BidCollectionService, PlayerBidInput } from '../services/BidCollectionService';
 
 export interface BidPhaseSummary {
   roundNumber: number;
   handCount: number;
-  bids: Array<{
-    playerId: string;
-    bid: number;
-  }>;
+  bids: Array<{ playerId: string; bid: number }>;
   confirmed: boolean;
 }
 
@@ -16,49 +12,60 @@ export class BidCollectionPhase {
 
   constructor(
     private roundNumber: number,
-    playerIds: string[],
+    private playerIds: string[],
     private inputSource: PlayerBidInput
   ) {
     this.service = new BidCollectionService(roundNumber, playerIds);
   }
 
   async run(): Promise<BidPhaseSummary> {
-    // Step 5a: Log/display the round information
+    // Display round information
     console.log(`Round ${this.roundNumber} — ${this.roundNumber} hands this round`);
 
-    // Step 5b: Collect all initial bids
+    // Collect all bids from players
     await this.service.collectAllBids(this.inputSource);
 
-    // Step 5c: Enter confirmation loop
+    // Confirmation loop
     let confirmed = false;
     while (!confirmed) {
-      // Display bid summary
-      const summary = this.service.getBidSummary();
-      console.log('Bid Summary:', summary);
+      // Display current bid summary
+      const bidSummary = this.service.getBidSummary();
+      console.log('\nBid Summary:');
+      bidSummary.forEach(({ playerId, bid }) => {
+        console.log(`  ${playerId}: ${bid}`);
+      });
 
       // Ask for confirmation
-      const response = await this.inputSource.prompt('Confirm bids? (yes/modify): ');
+      const response = await this.inputSource.getInput('\nConfirm bids? (yes/modify): ');
 
-      if (response.toLowerCase() === 'yes') {
+      if (response.toLowerCase().trim() === 'yes') {
         confirmed = true;
-      } else if (response.toLowerCase() === 'modify') {
+      } else if (response.toLowerCase().trim() === 'modify') {
         // Ask which player to modify
-        const playerIdToModify = await this.inputSource.prompt('Which player ID to modify? ');
-        const newBidStr = await this.inputSource.prompt('New bid value: ');
-        const newBid = parseInt(newBidStr, 10);
+        const playerId = await this.inputSource.getInput('Which player to modify? ');
+        if (!this.playerIds.includes(playerId)) {
+          console.log('Invalid player ID');
+          continue;
+        }
 
-        // Call service to modify bid
-        // Note: modifyBid should validate and throw if invalid
-        this.service.modifyBid(playerIdToModify, newBid);
+        // Ask for new bid
+        const newBidInput = await this.inputSource.getInput(`New bid for ${playerId} (0-${this.roundNumber}): `);
+        try {
+          this.service.modifyBid(playerId, newBidInput);
+        } catch (error) {
+          console.log(`Error: ${(error as Error).message}`);
+          // Loop continues to ask for confirmation again
+        }
+      } else {
+        console.log('Please answer "yes" or "modify"');
       }
     }
 
-    // Return the final summary with confirmed flag
-    const finalSummary = this.service.getBidSummary();
+    // Return final summary
     return {
       roundNumber: this.roundNumber,
       handCount: this.roundNumber,
-      bids: finalSummary,
+      bids: this.service.getBidSummary(),
       confirmed: true,
     };
   }
