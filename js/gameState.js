@@ -13,12 +13,13 @@ let gameState = {
 /**
  * Initialize the game state
  * Resets to round 1, setup phase, and clears completion flag
+ * @param {Array} [players] - Optional array of player objects to initialize with
  */
-function initializeGame() {
+function initializeGame(players) {
   gameState = {
     currentRound: 1,
     phase: 'setup',
-    players: [],
+    players: players ? JSON.parse(JSON.stringify(players)) : [],
     isComplete: false
   };
 }
@@ -53,7 +54,8 @@ function getGamePhase() {
 
 /**
  * Advance to the next round
- * When round 10 is completed, sets isComplete to true and phase to 'complete'
+ * Rounds 1-9 advance normally and set phase to 'bidding'
+ * Round 10 is playable; advancing from round 10 marks the game complete
  */
 function advanceRound() {
   if (gameState.isComplete) {
@@ -62,8 +64,9 @@ function advanceRound() {
 
   if (gameState.currentRound < 10) {
     gameState.currentRound++;
+    gameState.phase = 'bidding';
   } else if (gameState.currentRound === 10) {
-    // Mark game as complete after round 10
+    // Mark game as complete after round 10 is played
     gameState.isComplete = true;
     gameState.phase = 'complete';
   }
@@ -79,14 +82,14 @@ function isGameComplete() {
 
 /**
  * Get the current game state object
- * @returns {Object} The entire game state object
+ * @returns {Object} The entire game state object (deep cloned)
  */
 function getGameState() {
-  return { ...gameState };
+  return JSON.parse(JSON.stringify(gameState));
 }
 
-// ES6 module exports
-export {
+// CommonJS module exports
+module.exports = {
   initializeGame,
   getCurrentRound,
   setGamePhase,
