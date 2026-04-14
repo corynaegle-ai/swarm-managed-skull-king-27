@@ -1,111 +1,140 @@
 /**
  * Score Display UI Module
- * Handles rendering and interactions for score display
+ * Handles rendering score display and history to the DOM
  */
 
 class ScoreDisplayUI {
   constructor(scoreDisplay) {
     this.scoreDisplay = scoreDisplay;
     this.expandedPlayers = new Set();
+    this.initializeEventListeners();
   }
 
   /**
-   * Render the leaderboard with current scores
+   * Initialize event listeners for accordion headers
+   */
+  initializeEventListeners() {
+    // Event delegation for accordion headers
+    document.addEventListener('click', (e) => {
+      const header = e.target.closest('.accordion-header');
+      if (header) {
+        const playerName = header.dataset.playerName;
+        this.togglePlayerHistory(playerName);
+      }
+    });
+  }
+
+  /**
+   * Toggle the expanded/collapsed state of a player's history
+   * @param {string} playerName - Name of the player
+   */
+  togglePlayerHistory(playerName) {
+    if (this.expandedPlayers.has(playerName)) {
+      this.expandedPlayers.delete(playerName);
+    } else {
+      this.expandedPlayers.add(playerName);
+    }
+    this.render();
+  }
+
+  /**
+   * Render the entire score display including leaderboard and histories
+   */
+  render() {
+    this.renderLeaderboard();
+    this.renderPlayerHistories();
+  }
+
+  /**
+   * Render the current leaderboard showing player totals
    */
   renderLeaderboard() {
     const leaderboardContent = document.getElementById('leaderboard-content');
     if (!leaderboardContent) {
-      console.error('Element with id "leaderboard-content" not found');
+      console.error('Leaderboard content container not found');
       return;
     }
 
-    // Clear existing content
-    leaderboardContent.innerHTML = '';
-
-    const sortedPlayers = this.scoreDisplay.getPlayersSortedByScore();
+    const players = this.scoreDisplay.getPlayersSortedByScore();
     const leader = this.scoreDisplay.getCurrentLeader();
 
-    sortedPlayers.forEach((player, index) => {
+    leaderboardContent.innerHTML = '';
+
+    if (players.length === 0) {
+      leaderboardContent.innerHTML = '<div class="empty-state">No players yet</div>';
+      return;
+    }
+
+    players.forEach((player, index) => {
+      const isLeader = player.playerName === leader.playerName && player.score > 0;
       const item = document.createElement('div');
-      item.className = 'leaderboard-item';
-      
-      if (player.playerName === leader.playerName) {
-        item.classList.add('leader');
-      }
-
-      const playerNameDiv = document.createElement('span');
-      playerNameDiv.className = 'player-name';
-      playerNameDiv.textContent = `${index + 1}. ${player.playerName}`;
-
-      const scoreDiv = document.createElement('span');
-      scoreDiv.className = 'player-score';
-      scoreDiv.textContent = player.score;
-
-      item.appendChild(playerNameDiv);
-      item.appendChild(scoreDiv);
+      item.className = `leaderboard-item ${isLeader ? 'leader' : ''}`;
+      item.innerHTML = `
+        <span class="player-name">#${index + 1} ${player.playerName}</span>
+        <span class="player-score">${player.score}</span>
+      `;
       leaderboardContent.appendChild(item);
     });
   }
 
   /**
-   * Render the player history accordions
+   * Render the player history section with accordion items
    */
   renderPlayerHistories() {
-    const historiesContent = document.getElementById('player-histories-content');
-    if (!historiesContent) {
-      console.error('Element with id "player-histories-content" not found');
+    const playerHistoriesContent = document.getElementById('player-histories-content');
+    if (!playerHistoriesContent) {
+      console.error('Player histories content container not found');
       return;
     }
 
-    // Clear existing content
-    historiesContent.innerHTML = '';
+    const players = this.scoreDisplay.players;
+    playerHistoriesContent.innerHTML = '';
 
-    this.scoreDisplay.players.forEach(playerName => {
+    if (players.length === 0) {
+      playerHistoriesContent.innerHTML = '<div class="empty-state">No player histories yet</div>';
+      return;
+    }
+
+    players.forEach((playerName) => {
       const accordionItem = this.createAccordionItem(playerName);
-      historiesContent.appendChild(accordionItem);
+      playerHistoriesContent.appendChild(accordionItem);
     });
   }
 
   /**
-   * Create an accordion item for a player
+   * Create an accordion item for a player's score history
    * @param {string} playerName - Name of the player
    * @returns {HTMLElement} The accordion item element
    */
   createAccordionItem(playerName) {
+    const isExpanded = this.expandedPlayers.has(playerName);
+    const total = this.scoreDisplay.getPlayerTotal(playerName);
+    const roundBreakdown = this.scoreDisplay.getPlayerRoundBreakdown(playerName);
+
     const item = document.createElement('div');
-    item.className = 'accordion-item';
-    item.dataset.player = playerName;
+    item.className = `accordion-item ${isExpanded ? 'expanded' : ''}`;
 
-    // Header
+    // Create header
     const header = document.createElement('div');
-    header.className = 'accordion-header';
-    header.addEventListener('click', () => this.toggleAccordion(playerName, item));
+    header.className = `accordion-header ${isExpanded ? 'expanded' : ''}`;
+    header.dataset.playerName = playerName;
+    header.innerHTML = `
+      <div class="accordion-player-info">
+        <span class="accordion-player-name">${playerName}</span>
+        <span class="accordion-player-total">Total: ${total}</span>
+      </div>
+      <span class="accordion-toggle-icon">▼</span>
+    `;
 
-    const playerInfo = document.createElement('div');
-    playerInfo.className = 'accordion-player-info';
-
-    const playerName_el = document.createElement('div');
-    playerName_el.className = 'accordion-player-name';
-    playerName_el.textContent = playerName;
-
-    const totalScore = document.createElement('div');
-    totalScore.className = 'accordion-player-total';
-    totalScore.textContent = `Total: ${this.scoreDisplay.getPlayerTotal(playerName)}`;
-
-    playerInfo.appendChild(playerName_el);
-    playerInfo.appendChild(totalScore);
-
-    const toggleIcon = document.createElement('span');
-    toggleIcon.className = 'accordion-toggle-icon';
-    toggleIcon.textContent = '▼';
-
-    header.appendChild(playerInfo);
-    header.appendChild(toggleIcon);
-
-    // Content
+    // Create content
     const content = document.createElement('div');
     content.className = 'accordion-content';
-    content.innerHTML = this.createBreakdownTable(playerName);
+
+    if (roundBreakdown.length > 0) {
+      content.innerHTML = this.createScoreBreakdownTable(roundBreakdown);
+    } else {
+      content.innerHTML = '<div class="empty-state" style="padding: 20px;">No round history yet</div>';
+    }
 
     item.appendChild(header);
     item.appendChild(content);
@@ -114,83 +143,44 @@ class ScoreDisplayUI {
   }
 
   /**
-   * Create the breakdown table HTML for a player's scores
-   * @param {string} playerName - Name of the player
-   * @returns {string} HTML string for the breakdown table
+   * Create a score breakdown table for a player
+   * @param {Array} roundBreakdown - Array of {roundNumber, roundScore, runningTotal} objects
+   * @returns {string} HTML string for the table
    */
-  createBreakdownTable(playerName) {
-    const breakdown = this.scoreDisplay.getPlayerRoundBreakdown(playerName);
-    const total = this.scoreDisplay.getPlayerTotal(playerName);
+  createScoreBreakdownTable(roundBreakdown) {
+    let html = `
+      <table class="score-breakdown-table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Points</th>
+            <th>Running Total</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
-    if (breakdown.length === 0) {
-      return '<p class="empty-state">No rounds played yet</p>';
-    }
-
-    let html = '<table class="score-breakdown-table"><thead><tr>';
-    html += '<th>Round</th><th>Score</th><th>Running Total</th></tr></thead><tbody>';
-
-    breakdown.forEach(round => {
-      html += '<tr>';
-      html += `<td class="round-number">Round ${round.roundNumber}</td>`;
-      html += `<td class="round-score">${round.roundScore}</td>`;
-      html += `<td class="running-total">${round.runningTotal}</td>`;
-      html += '</tr>';
+    roundBreakdown.forEach((round) => {
+      html += `
+        <tr>
+          <td class="round-number">Round ${round.roundNumber}</td>
+          <td class="round-score">${round.roundScore}</td>
+          <td class="running-total">${round.runningTotal}</td>
+        </tr>
+      `;
     });
 
-    html += '</tbody></table>';
-    html += `<div class="breakdown-summary">`;
-    html += `<span class="breakdown-summary-label">Final Total:</span>`;
-    html += `<span class="breakdown-summary-value">${total}</span>`;
-    html += `</div>`;
+    const totalScore = roundBreakdown.length > 0 ? roundBreakdown[roundBreakdown.length - 1].runningTotal : 0;
+    html += `
+        </tbody>
+      </table>
+      <div class="breakdown-summary">
+        <span class="breakdown-summary-label">Final Total:</span>
+        <span class="breakdown-summary-value">${totalScore}</span>
+      </div>
+    `;
 
     return html;
-  }
-
-  /**
-   * Toggle accordion expansion for a player
-   * @param {string} playerName - Name of the player
-   * @param {HTMLElement} accordionItem - The accordion item element
-   */
-  toggleAccordion(playerName, accordionItem) {
-    const isExpanded = this.expandedPlayers.has(playerName);
-
-    if (isExpanded) {
-      this.expandedPlayers.delete(playerName);
-      accordionItem.classList.remove('expanded');
-    } else {
-      this.expandedPlayers.add(playerName);
-      accordionItem.classList.add('expanded');
-    }
-  }
-
-  /**
-   * Render all UI components (leaderboard and histories)
-   */
-  render() {
-    this.renderLeaderboard();
-    this.renderPlayerHistories();
-  }
-
-  /**
-   * Update the display with the latest scores
-   */
-  update() {
-    this.renderLeaderboard();
-    // Update total scores in accordion headers
-    this.scoreDisplay.players.forEach(playerName => {
-      const accordionItem = document.querySelector(`[data-player="${playerName}"]`);
-      if (accordionItem) {
-        const totalSpan = accordionItem.querySelector('.accordion-player-total');
-        if (totalSpan) {
-          totalSpan.textContent = `Total: ${this.scoreDisplay.getPlayerTotal(playerName)}`;
-        }
-        // Update the breakdown table
-        const content = accordionItem.querySelector('.accordion-content');
-        if (content) {
-          content.innerHTML = this.createBreakdownTable(playerName);
-        }
-      }
-    });
   }
 }
 
