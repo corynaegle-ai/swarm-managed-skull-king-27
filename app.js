@@ -1,85 +1,90 @@
 /**
  * Skull King - Main Application Entry Point
- * Initializes the app state and manages the application lifecycle
+ * 
+ * This file initializes the application state and sets up
+ * the core functionality for the Skull King game.
  */
 
+// ==========================================
 // Application State
-const appState = {
-    initialized: false,
-    version: '1.0.0',
-    gameStarted: false,
+// ==========================================
+
+const AppState = {
+    isInitialized: false,
+    gameStatus: 'idle',
     players: [],
     currentRound: 0,
-    gameLog: []
 };
 
+// ==========================================
+// DOM Elements
+// ==========================================
+
+const DOM = {
+    app: document.getElementById('app'),
+    mainContent: document.getElementById('main-content'),
+    gameSection: document.getElementById('game-section'),
+};
+
+// ==========================================
+// Utility Functions
+// ==========================================
+
 /**
- * Initialize the application
- * Sets up event listeners and initial state
+ * Validates that required DOM elements exist
+ * @returns {boolean} True if all required elements are present
+ */
+function validateDOMElements() {
+    const requiredElements = ['app', 'main-content', 'game-section'];
+    for (const elementId of requiredElements) {
+        if (!document.getElementById(elementId)) {
+            console.error(`Missing required DOM element: #${elementId}`);
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Logs application initialization message
+ */
+function logInitialization() {
+    console.log('=== Skull King Application Initialized ===');
+    console.log('App State:', AppState);
+    console.log('DOM Elements Validated: OK');
+}
+
+// ==========================================
+// Initialization
+// ==========================================
+
+/**
+ * Initializes the application
+ * Called when DOM is ready
  */
 function initializeApp() {
     try {
-        console.log('Initializing Skull King application...');
-        
-        // Verify DOM is ready
-        const appElement = document.getElementById('app');
-        if (!appElement) {
-            throw new Error('Application root element #app not found');
+        // Validate DOM structure
+        if (!validateDOMElements()) {
+            throw new Error('DOM validation failed');
         }
 
-        // Mark app as initialized
-        appState.initialized = true;
-        appState.gameLog.push('App initialized');
-        
-        // Setup event listeners
-        setupEventListeners();
-        
-        // Log initialization success
-        console.log('Skull King v' + appState.version + ' - Ready to play!');
-        logAppState();
-        
-        return true;
+        // Set initial state
+        AppState.isInitialized = true;
+        AppState.gameStatus = 'ready';
+
+        // Log successful initialization
+        logInitialization();
+
     } catch (error) {
-        console.error('Failed to initialize application:', error);
-        return false;
+        console.error('Failed to initialize application:', error.message);
+        AppState.isInitialized = false;
     }
 }
 
-/**
- * Setup application event listeners
- */
-function setupEventListeners() {
-    // Document ready events can be added here
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM Content Loaded');
-    });
-}
-
-/**
- * Log current application state
- */
-function logAppState() {
-    console.log('App State:', appState);
-}
-
-/**
- * Add entry to game log
- * @param {string} message - Log message
- */
-function addGameLog(message) {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = `[${timestamp}] ${message}`;
-    appState.gameLog.push(logEntry);
-    console.log(logEntry);
-}
-
-/**
- * Get current application state
- * @returns {Object} - Current app state
- */
-function getAppState() {
-    return appState;
-}
+// ==========================================
+// Event Listeners
+// ==========================================
 
 // Initialize app when DOM is ready
 if (document.readyState === 'loading') {
@@ -87,4 +92,16 @@ if (document.readyState === 'loading') {
 } else {
     // DOM is already loaded
     initializeApp();
+}
+
+// ==========================================
+// Exports (for testing or module integration)
+// ==========================================
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        AppState,
+        initializeApp,
+        validateDOMElements,
+    };
 }
