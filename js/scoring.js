@@ -80,10 +80,9 @@ function initializeScoringForm(roundNumber = 1) {
   function isFormComplete() {
     const bid = bidInput.value.trim();
     const tricks = tricksInput.value.trim();
-    const bonus = bonusInput.value.trim();
     
-    // All fields must have values
-    return bid !== '' && tricks !== '' && bonus !== '';
+    // Bid and tricks are required; bonus defaults to 0 if empty
+    return bid !== '' && tricks !== '';
   }
   
   // Helper function to update button state
@@ -139,17 +138,15 @@ function updateScoreDisplay() {
 function isScoringFormComplete() {
   const bidInput = document.querySelector('#bid-input');
   const tricksInput = document.querySelector('#tricks-input');
-  const bonusInput = document.querySelector('#bonus-input');
   
-  if (!bidInput || !tricksInput || !bonusInput) {
+  if (!bidInput || !tricksInput) {
     return false;
   }
   
   const bid = bidInput.value.trim();
   const tricks = tricksInput.value.trim();
-  const bonus = bonusInput.value.trim();
   
-  return bid !== '' && tricks !== '' && bonus !== '';
+  return bid !== '' && tricks !== '';
 }
 
 /**
