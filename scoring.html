@@ -3,6 +3,169 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Score Entry - Tricks Game</title>
+  <link rel="stylesheet" href="css/scoring.css">
+</head>
+<body>
+  <div class="scoring-container">
+    <div class="scoring-header">
+      <h1>Score Entry</h1>
+      <p class="round-info">Round <span id="currentRound">1</span> - Enter tricks taken and bonus points</p>
+    </div>
+
+    <form class="scoring-form" id="scoringForm">
+      <div class="players-grid" id="playersGrid">
+        <!-- Player cards will be dynamically inserted here -->
+        <div class="player-card">
+          <div class="player-name">Player 1</div>
+          <div class="bid-display">
+            <span class="bid-label">Bid:</span>
+            <span class="bid-value">3</span>
+          </div>
+          <div class="form-group">
+            <label for="tricks-player1">
+              Tricks Taken
+              <span class="input-hint">(0 to 13)</span>
+            </label>
+            <input
+              type="number"
+              id="tricks-player1"
+              name="tricks-player1"
+              class="tricks-input"
+              min="0"
+              max="13"
+              value="0"
+              required
+              aria-label="Tricks taken by Player 1"
+            />
+          </div>
+          <div class="form-group">
+            <label for="bonus-player1">
+              Bonus Points
+              <span class="input-hint">(default 0)</span>
+            </label>
+            <input
+              type="number"
+              id="bonus-player1"
+              name="bonus-player1"
+              class="bonus-input"
+              min="0"
+              value="0"
+              required
+              aria-label="Bonus points for Player 1"
+            />
+          </div>
+          <div class="score-display">
+            <div class="score-label">Calculated Score</div>
+            <div class="score-value" data-player="1">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="backBtn" aria-label="Go back to bid entry">
+          Back
+        </button>
+        <button type="submit" class="btn btn-primary" id="nextRoundBtn" aria-label="Submit scores and continue to next round">
+          Next Round
+        </button>
+      </div>
+    </form>
+
+    <div class="round-navigation">
+      <button type="button" class="btn btn-nav" id="prevRoundNav" aria-label="Previous round">
+        ← Previous
+      </button>
+      <div class="round-display" id="roundDisplay">
+        Round <span id="roundNumber">1</span>
+      </div>
+      <button type="button" class="btn btn-nav" id="nextRoundNav" aria-label="Next round">
+        Next →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Score calculation on input change
+    document.querySelectorAll('.tricks-input, .bonus-input').forEach(input => {
+      input.addEventListener('change', function() {
+        calculateScore(this);
+      });
+      input.addEventListener('input', function() {
+        calculateScore(this);
+      });
+    });
+
+    function calculateScore(inputElement) {
+      const playerCard = inputElement.closest('.player-card');
+      const tricksInput = playerCard.querySelector('.tricks-input');
+      const bonusInput = playerCard.querySelector('.bonus-input');
+      const scoreDisplay = playerCard.querySelector('.score-value');
+
+      const tricks = parseInt(tricksInput.value) || 0;
+      const bonus = parseInt(bonusInput.value) || 0;
+      const bid = parseInt(playerCard.querySelector('.bid-value').textContent) || 0;
+
+      // Basic scoring: tricks matching bid gets base points, plus bonus
+      let score = 0;
+      if (tricks === bid) {
+        score = (bid * 10) + 10 + bonus; // Bid achieved: bid*10 + 10 + bonus
+      } else {
+        score = (bid * -5) + bonus; // Bid failed: bid*-5 + bonus
+      }
+
+      scoreDisplay.textContent = score;
+    }
+
+    // Navigation and form submission
+    document.getElementById('backBtn').addEventListener('click', function() {
+      // Navigate back to bid entry
+      window.history.back();
+    });
+
+    document.getElementById('nextRoundBtn').addEventListener('click', function(e) {
+      e.preventDefault();
+      // Validate all inputs are filled
+      const form = document.getElementById('scoringForm');
+      if (form.checkValidity()) {
+        // Submit scores and move to next round
+        console.log('Scores submitted');
+        // Navigate to next round or game end
+      } else {
+        alert('Please fill all fields with valid values');
+      }
+    });
+
+    // Round navigation
+    document.getElementById('prevRoundNav').addEventListener('click', function() {
+      // Load previous round scores
+    });
+
+    document.getElementById('nextRoundNav').addEventListener('click', function() {
+      // Load next round (if exists) or disable if at end
+    });
+
+    // Disable/enable next round button based on hand count max
+    function validateTricksInput() {
+      document.querySelectorAll('.tricks-input').forEach(input => {
+        const maxTricks = input.max;
+        if (input.value > maxTricks) {
+          input.value = maxTricks;
+        }
+      });
+    }
+
+    document.querySelectorAll('.tricks-input').forEach(input => {
+      input.addEventListener('blur', validateTricksInput);
+    });
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scoring - Bid Game</title>
   <link rel="stylesheet" href="css/scoring.css">
 </head>
