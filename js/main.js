@@ -1,231 +1,27 @@
-import { showBidPhase } from './bid-phase.js';
-
-// Game state management
-const gameState = {
-  currentRound: 1,
-  maxRounds: 10,
-  players: [],
-  currentPhase: 'setup', // setup, bidding, scoring, complete
-  bids: [], // array of {playerId, bidAmount}
-  tricks: [], // array of trick results
-  scores: {}, // {playerId: totalScore}
-};
-
-// Initialize game
-function handleNewGame() {
-  // Reset game state
-  gameState.currentRound = 1;
-  gameState.currentPhase = 'setup';
-  gameState.bids = [];
-  gameState.tricks = [];
-  
-  // Initialize players (assuming 4 players for Skull King)
-  gameState.players = [
-    { id: 1, name: 'Player 1' },
-    { id: 2, name: 'Player 2' },
-    { id: 3, name: 'Player 3' },
-    { id: 4, name: 'Player 4' }
-  ];
-  
-  // Initialize scores
-  gameState.players.forEach(player => {
-    gameState.scores[player.id] = 0;
-  });
-  
-  renderRoundInfo();
-  transitionToPhase('bidding');
-}
-
-// Render round information
-function renderRoundInfo() {
-  const roundDisplay = document.getElementById('round-display');
-  if (roundDisplay) {
-    roundDisplay.innerHTML = `
-      <div class="round-header">
-        <h2>Round ${gameState.currentRound} of ${gameState.maxRounds}</h2>
-        <p>Phase: ${gameState.currentPhase.charAt(0).toUpperCase() + gameState.currentPhase.slice(1)}</p>
-      </div>
-    `;
-  }
-}
-
-// Render player scores
-function renderPlayerScores() {
-  const scoresDisplay = document.getElementById('scores-display');
-  if (scoresDisplay) {
-    const scoresHtml = gameState.players.map(player => `
-      <div class="player-score-row">
-        <span class="player-name">${player.name}</span>
-        <span class="player-score">${gameState.scores[player.id]}</span>
-      </div>
-    `).join('');
-    
-    scoresDisplay.innerHTML = `
-      <table class="scores-table">
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${scoresHtml}
-        </tbody>
-      </table>
-    `;
-  }
-}
-
-// Render game phase specific content
-function renderGamePhase() {
-  const bidPhaseContainer = document.getElementById('bid-phase-container');
-  const scoringPhaseContainer = document.getElementById('scoring-phase-container');
-  
-  if (gameState.currentPhase === 'bidding') {
-    if (bidPhaseContainer) bidPhaseContainer.style.display = 'block';
-    if (scoringPhaseContainer) scoringPhaseContainer.style.display = 'none';
-  } else if (gameState.currentPhase === 'scoring') {
-    if (bidPhaseContainer) bidPhaseContainer.style.display = 'none';
-    if (scoringPhaseContainer) scoringPhaseContainer.style.display = 'block';
-  }
-}
-
-// Render final scores
-function renderFinalScores() {
-  const finalScoresContainer = document.getElementById('final-scores-container');
-  const gamePhaseContainer = document.getElementById('game-phase-container');
-  
-  if (finalScoresContainer && gamePhaseContainer) {
-    gamePhaseContainer.style.display = 'none';
-    finalScoresContainer.style.display = 'block';
-    
-    const sortedPlayers = [...gameState.players].sort((a, b) => 
-      gameState.scores[b.id] - gameState.scores[a.id]
-    );
-    
-    const finalScoresHtml = sortedPlayers.map((player, index) => `
-      <div class="final-score-row" data-rank="${index + 1}">
-        <span class="rank">${index + 1}.</span>
-        <span class="player-name">${player.name}</span>
-        <span class="final-score">${gameState.scores[player.id]}</span>
-      </div>
-    `).join('');
-    
-    const finalScoresDisplay = document.getElementById('final-scores-display');
-    if (finalScoresDisplay) {
-      finalScoresDisplay.innerHTML = `
-        <h2>Final Scores</h2>
-        <div class="final-scores-list">
-          ${finalScoresHtml}
-        </div>
-        <button id="new-game-btn" class="btn-primary">Start New Game</button>
-      `;
-      
-      document.getElementById('new-game-btn').addEventListener('click', handleNewGame);
-    }
-  }
-}
-
-// Transition between game phases
-function transitionToPhase(newPhase) {
-  gameState.currentPhase = newPhase;
-  renderRoundInfo();
-  renderGamePhase();
-  
-  if (newPhase === 'bidding') {
-    initiateBiddingPhase();
-  } else if (newPhase === 'scoring') {
-    displayBidSummary();
-  }
-}
-
-// Initiate the bidding phase
-function initiateBiddingPhase() {
-  gameState.bids = [];
-  showBidPhase(gameState.players, gameState.currentRound, handleBidSubmitted);
-}
-
-// Handle bid submission from bid-phase.js
-function handleBidSubmitted(bids) {
-  gameState.bids = bids; // array of {playerId, bidAmount}
-  transitionToPhase('scoring');
-}
-
-// Display bid summary before scoring
-function displayBidSummary() {
-  const scoringPhaseContainer = document.getElementById('scoring-phase-container');
-  if (scoringPhaseContainer) {
-    const bidSummaryHtml = gameState.bids.map(bid => {
-      const player = gameState.players.find(p => p.id === bid.playerId);
-      return `
-        <div class="bid-summary-row">
-          <span class="player-name">${player.name}</span>
-          <span class="bid-amount">Bid: ${bid.bidAmount}</span>
-        </div>
-      `;
-    }).join('');
-    
-    scoringPhaseContainer.innerHTML = `
-      <div class="bid-summary">
-        <h2>Round ${gameState.currentRound} - Bid Summary</h2>
-        <div class="bids-list">
-          ${bidSummaryHtml}
-        </div>
-        <button id="continue-to-scoring-btn" class="btn-primary">Continue to Scoring</button>
-      </div>
-    `;
-    
-    document.getElementById('continue-to-scoring-btn').addEventListener('click', () => {
-      // TODO: Implement actual scoring logic
-      proceedToNextRound();
-    });
-  }
-}
-
-// Proceed to next round or end game
-function proceedToNextRound() {
-  if (gameState.currentRound < gameState.maxRounds) {
-    gameState.currentRound++;
-    gameState.bids = [];
-    gameState.tricks = [];
-    transitionToPhase('bidding');
-  } else {
-    gameState.currentPhase = 'complete';
-    renderPlayerScores();
-    renderFinalScores();
-  }
-}
-
-// Update game status display
-function updateGameStatus(message) {
-  const gameStatus = document.getElementById('game-status');
-  if (gameStatus) {
-    gameStatus.textContent = message;
-  }
-}
-
-// Event listeners for phase transitions
-document.addEventListener('bidSubmitted', (e) => {
-  handleBidSubmitted(e.detail.bids);
-});
-
-document.addEventListener('phaseComplete', (e) => {
-  transitionToPhase(e.detail.nextPhase);
-});
-
-// Initialize game on page load
-window.addEventListener('DOMContentLoaded', () => {
-  handleNewGame();
-});
-
-// Export functions for external use
-export { handleNewGame, transitionToPhase, displayBidSummary, gameState };/**
+/**
  * main.js - Main game flow orchestrator for Skull King
  * Integrates bid collection phase with game state management
  */
 
-// Import bid phase functions (assuming bid-phase.js is loaded before this)
-// Note: In a real module system, we would use: import { showBidPhase, getBidPhaseState } from './bid-phase.js';
+import { showBidPhase } from './bid-phase.js';
+
+/**
+ * Utility function to escape HTML special characters for safe DOM insertion
+ * Prevents XSS vulnerabilities when displaying user-provided content
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text safe for innerHTML
+ */
+function escapeHTML(text) {
+  if (!text) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, char => map[char]);
+}
 
 /**
  * Game State Object
@@ -234,20 +30,19 @@ export { handleNewGame, transitionToPhase, displayBidSummary, gameState };/**
 const gameState = {
   // Round and player management
   currentRound: 1,
-  maxRounds: 13,
+  maxRounds: 10, // Skull King standard: 10 rounds
   players: [],
-  currentPhase: 'setup', // setup, bid, scoring, round-complete
+  currentPhase: 'setup', // setup, bid, summary, scoring, round-complete, game-end
 
   // Bid collection state
-  bids: [], // Array of { playerId, bidAmount } objects
+  bids: [], // Array of { playerId, bidAmount } objects for current round
 
   // Scores and history
   scores: {}, // { playerId: currentScore }
   roundHistory: [], // Array of round results with bids and actual tricks
 
   // UI and control state
-  isTransitioning: false,
-  bidPhaseSummary: null
+  isTransitioning: false
 };
 
 /**
@@ -255,6 +50,11 @@ const gameState = {
  * @param {Array} playerList - Array of player objects with { id, name }
  */
 function initializeGame(playerList) {
+  if (!playerList || !Array.isArray(playerList) || playerList.length === 0) {
+    console.error('Invalid player list provided to initializeGame');
+    return;
+  }
+
   console.log('Initializing game with players:', playerList);
 
   gameState.players = playerList;
@@ -264,12 +64,15 @@ function initializeGame(playerList) {
   // Initialize scores for each player
   gameState.scores = {};
   playerList.forEach(player => {
-    gameState.scores[player.id] = 0;
+    if (player && player.id) {
+      gameState.scores[player.id] = 0;
+    }
   });
 
-  // Initialize empty bids array
+  // Initialize empty bids array and round history
   gameState.bids = [];
   gameState.roundHistory = [];
+  gameState.isTransitioning = false;
 
   updateGameStatus();
   startRound();
@@ -290,10 +93,25 @@ function startRound() {
   // Reset bids for new round
   gameState.bids = [];
   gameState.currentPhase = 'bid';
-  gameState.bidPhaseSummary = null;
+  gameState.isTransitioning = false;
 
   updateGameStatus();
+  renderRoundInfo();
   activateBidPhase();
+}
+
+/**
+ * Render round information display
+ */
+function renderRoundInfo() {
+  const roundDisplay = document.getElementById('round-display');
+  if (!roundDisplay) {
+    console.error('round-display element not found in DOM');
+    return;
+  }
+
+  const phaseText = gameState.currentPhase.charAt(0).toUpperCase() + gameState.currentPhase.slice(1);
+  roundDisplay.textContent = `Round ${gameState.currentRound} of ${gameState.maxRounds} | Phase: ${phaseText}`;
 }
 
 /**
@@ -305,31 +123,35 @@ function activateBidPhase() {
 
   const bidPhaseContainer = document.getElementById('bid-phase-container');
   if (!bidPhaseContainer) {
-    console.error('Bid phase container not found in DOM');
+    console.error('Bid phase container (#bid-phase-container) not found in DOM');
     return;
   }
 
-  // Check if bid phase functions are available (from bid-phase.js)
-  if (typeof showBidPhase !== 'function') {
-    console.error('showBidPhase function not available. Make sure bid-phase.js is loaded.');
-    return;
-  }
+  // Clear any existing content
+  bidPhaseContainer.innerHTML = '';
 
-  // Show bid collection interface
-  showBidPhase({
-    round: gameState.currentRound,
-    players: gameState.players,
-    onBidSubmitted: handleBidSubmitted,
-    onBidPhaseComplete: handleBidPhaseComplete
-  });
+  // Call showBidPhase from bid-phase.js with proper callback
+  // Expected signature: showBidPhase(players, round, onBidCallback)
+  showBidPhase(gameState.players, gameState.currentRound, handleBidSubmitted);
 }
 
 /**
- * Handle a single player's bid submission
- * @param {string} playerId - The ID of the player who submitted
- * @param {number} bidAmount - The bid amount
+ * Handle a player's bid submission
+ * Called by bid-phase.js when a player submits their bid
+ * @param {string|number} playerId - The ID of the player who submitted
+ * @param {number} bidAmount - The bid amount (number of tricks)
  */
 function handleBidSubmitted(playerId, bidAmount) {
+  if (playerId === null || playerId === undefined) {
+    console.error('Invalid playerId provided to handleBidSubmitted');
+    return;
+  }
+
+  if (typeof bidAmount !== 'number' || bidAmount < 0) {
+    console.error('Invalid bidAmount provided:', bidAmount);
+    return;
+  }
+
   console.log(`Player ${playerId} bid ${bidAmount} tricks`);
 
   // Check if player already has a bid
@@ -347,6 +169,7 @@ function handleBidSubmitted(playerId, bidAmount) {
   }
 
   console.log('Current bids:', gameState.bids);
+  updateGameStatus();
 
   // Check if all players have submitted bids
   checkAllBidsSubmitted();
@@ -354,6 +177,7 @@ function handleBidSubmitted(playerId, bidAmount) {
 
 /**
  * Check if all players have submitted their bids
+ * If yes, transition to summary phase
  */
 function checkAllBidsSubmitted() {
   const allPlayersCount = gameState.players.length;
@@ -368,68 +192,54 @@ function checkAllBidsSubmitted() {
 
 /**
  * Handle when all players have submitted bids
- * Show summary and prepare for scoring phase
+ * Transition to summary phase to display bids
  */
 function handleAllBidsSubmitted() {
   console.log('All bids submitted for round', gameState.currentRound);
 
-  // Create bid summary
-  const summary = createBidSummary();
-  gameState.bidPhaseSummary = summary;
-
-  // Show bid summary to players
-  displayBidSummary(summary);
+  gameState.currentPhase = 'summary';
+  updateGameStatus();
+  displayBidSummary();
 }
 
 /**
- * Create a formatted summary of all bids for the current round
- * @returns {Object} Summary object with bid information
+ * Display bid summary and provide button to proceed to scoring
+ * User must confirm with button click to transition to scoring phase
  */
-function createBidSummary() {
-  const summary = {
-    round: gameState.currentRound,
-    bids: []
-  };
-
-  // Create bid summary entries
-  gameState.bids.forEach(bid => {
-    const player = gameState.players.find(p => p.id === bid.playerId);
-    if (player) {
-      summary.bids.push({
-        playerId: bid.playerId,
-        playerName: player.name,
-        bidAmount: bid.bidAmount
-      });
-    }
-  });
-
-  // Sort by player order for consistent display
-  summary.bids.sort((a, b) => {
-    const playerAIndex = gameState.players.findIndex(p => p.id === a.playerId);
-    const playerBIndex = gameState.players.findIndex(p => p.id === b.playerId);
-    return playerAIndex - playerBIndex;
-  });
-
-  return summary;
-}
-
-/**
- * Display bid summary and provide option to proceed to scoring
- * @param {Object} summary - The bid summary object
- */
-function displayBidSummary(summary) {
-  console.log('Displaying bid summary for round', summary.round);
+function displayBidSummary() {
+  console.log('Displaying bid summary for round', gameState.currentRound);
 
   const bidPhaseContainer = document.getElementById('bid-phase-container');
   if (!bidPhaseContainer) {
-    console.error('Bid phase container not found');
+    console.error('Bid phase container (#bid-phase-container) not found in DOM');
     return;
   }
 
-  // Create summary HTML
+  // Validate we have bids
+  if (!gameState.bids || gameState.bids.length === 0) {
+    console.error('No bids available to display');
+    return;
+  }
+
+  // Build bid summary HTML with escaped player names
+  const bidSummaryRows = gameState.bids.map(bid => {
+    const player = gameState.players.find(p => p.id === bid.playerId);
+    if (!player) {
+      console.warn(`Player with id ${bid.playerId} not found`);
+      return '';
+    }
+    const escapedName = escapeHTML(player.name);
+    return `
+      <tr>
+        <td>${escapedName}</td>
+        <td>${bid.bidAmount}</td>
+      </tr>
+    `;
+  }).join('');
+
   const summaryHTML = `
     <div class="bid-summary">
-      <h2>Round ${summary.round} - Bid Summary</h2>
+      <h2>Round ${gameState.currentRound} - Bid Summary</h2>
       <table class="bid-summary-table">
         <thead>
           <tr>
@@ -438,12 +248,7 @@ function displayBidSummary(summary) {
           </tr>
         </thead>
         <tbody>
-          ${summary.bids.map(bid => `
-            <tr>
-              <td>${bid.playerName}</td>
-              <td>${bid.bidAmount}</td>
-            </tr>
-          `).join('')}
+          ${bidSummaryRows}
         </tbody>
       </table>
       <div class="bid-summary-actions">
@@ -452,10 +257,10 @@ function displayBidSummary(summary) {
     </div>
   `;
 
-  // Insert summary into container without replacing the container itself
-  const summaryDiv = document.createElement('div');
-  summaryDiv.innerHTML = summaryHTML;
-  bidPhaseContainer.appendChild(summaryDiv);
+  // Create a wrapper div and insert summary without replacing container
+  const summaryWrapper = document.createElement('div');
+  summaryWrapper.innerHTML = summaryHTML;
+  bidPhaseContainer.appendChild(summaryWrapper);
 
   // Attach event listener to proceed button
   const proceedBtn = document.getElementById('proceed-to-scoring-btn');
@@ -466,9 +271,10 @@ function displayBidSummary(summary) {
 
 /**
  * Handle the proceed to scoring button click
+ * User-driven transition to scoring phase
  */
 function handleProceedToScoring() {
-  console.log('Proceeding to scoring phase from round', gameState.currentRound);
+  console.log('User confirmed: proceeding to scoring phase from round', gameState.currentRound);
 
   // Validate that we have bids stored
   if (!gameState.bids || gameState.bids.length === 0) {
@@ -476,21 +282,36 @@ function handleProceedToScoring() {
     return;
   }
 
+  // Persist bids to round history BEFORE clearing them
+  persistRoundBids();
+
   // Transition to scoring phase
   transitionToScoringPhase();
 }
 
 /**
- * Handle when bid phase is complete (all bids collected and confirmed)
+ * Persist the current round's bids to round history
+ * This ensures bids are stored for validation before being reset
  */
-function handleBidPhaseComplete() {
-  console.log('Bid phase complete for round', gameState.currentRound);
-  // This is called when the bid phase UI signals completion
-  // The actual transition happens after summary confirmation
+function persistRoundBids() {
+  console.log('Persisting bids for round', gameState.currentRound);
+
+  const roundRecord = {
+    round: gameState.currentRound,
+    bids: gameState.bids.map(bid => ({
+      playerId: bid.playerId,
+      bidAmount: bid.bidAmount
+    })),
+    timestamp: new Date().toISOString()
+  };
+
+  gameState.roundHistory.push(roundRecord);
+  console.log('Round history updated:', gameState.roundHistory);
 }
 
 /**
  * Transition to the scoring phase
+ * Clear bid interface and show scoring interface
  */
 function transitionToScoringPhase() {
   if (gameState.isTransitioning) {
@@ -501,37 +322,32 @@ function transitionToScoringPhase() {
   gameState.isTransitioning = true;
   gameState.currentPhase = 'scoring';
 
-  console.log('Transitioning to scoring phase');
+  console.log('Transitioning to scoring phase for round', gameState.currentRound);
   updateGameStatus();
 
-  // Clear bid phase container
+  // Hide bid phase container and show scoring phase container
   const bidPhaseContainer = document.getElementById('bid-phase-container');
+  const scoringPhaseContainer = document.getElementById('scoring-phase-container');
+
   if (bidPhaseContainer) {
-    bidPhaseContainer.innerHTML = '';
+    bidPhaseContainer.style.display = 'none';
   }
 
-  // TODO: In a full implementation, call scoring phase function here
-  // startScoringPhase();
-
-  // For now, simulate completing the round after a short delay
-  setTimeout(() => {
-    completeRound();
-  }, 1000);
+  if (scoringPhaseContainer) {
+    scoringPhaseContainer.style.display = 'block';
+    // TODO: Initialize scoring phase interface here when scoring-phase.js is implemented
+    // For now, auto-complete after delay
+    setTimeout(() => {
+      completeRound();
+    }, 2000);
+  }
 }
 
 /**
- * Complete the current round
- * Store round results and prepare for next round
+ * Complete the current round and prepare for next round
  */
 function completeRound() {
   console.log('Completing round', gameState.currentRound);
-
-  // Store round history
-  gameState.roundHistory.push({
-    round: gameState.currentRound,
-    bids: [...gameState.bids],
-    timestamp: new Date().toISOString()
-  });
 
   // Move to next round
   gameState.currentRound += 1;
@@ -561,10 +377,100 @@ function endGame() {
 
   const gameStatusDiv = document.getElementById('game-status');
   if (gameStatusDiv) {
-    gameStatusDiv.innerHTML = '<p>Game Complete! Final scores displayed.</p>';
+    gameStatusDiv.textContent = 'Game Complete!';
   }
 
-  // TODO: Display final leaderboard
+  // Display final scores
+  displayFinalScores();
+}
+
+/**
+ * Display final scores sorted by rank
+ */
+function displayFinalScores() {
+  const finalScoresContainer = document.getElementById('final-scores-container');
+  const gamePhaseContainer = document.getElementById('game-phase-container');
+
+  if (!finalScoresContainer || !gamePhaseContainer) {
+    console.error('Final scores containers not found in DOM');
+    return;
+  }
+
+  // Hide game phase containers
+  gamePhaseContainer.style.display = 'none';
+  finalScoresContainer.style.display = 'block';
+
+  // Sort players by final score (descending)
+  const sortedPlayers = [...gameState.players].sort((a, b) => {
+    const scoreA = gameState.scores[a.id] || 0;
+    const scoreB = gameState.scores[b.id] || 0;
+    return scoreB - scoreA;
+  });
+
+  // Build final scores HTML with escaped player names
+  const finalScoresHtml = sortedPlayers.map((player, index) => {
+    const escapedName = escapeHTML(player.name);
+    const score = gameState.scores[player.id] || 0;
+    return `
+      <div class="final-score-row" data-rank="${index + 1}">
+        <span class="rank">${index + 1}.</span>
+        <span class="player-name">${escapedName}</span>
+        <span class="final-score">${score}</span>
+      </div>
+    `;
+  }).join('');
+
+  const finalScoresDisplay = document.getElementById('final-scores-display');
+  if (finalScoresDisplay) {
+    finalScoresDisplay.innerHTML = `
+      <h2>Final Scores</h2>
+      <div class="final-scores-list">
+        ${finalScoresHtml}
+      </div>
+      <button id="new-game-btn" class="btn btn-primary">Start New Game</button>
+    `;
+
+    const newGameBtn = document.getElementById('new-game-btn');
+    if (newGameBtn) {
+      newGameBtn.addEventListener('click', handleNewGame);
+    }
+  }
+}
+
+/**
+ * Render current player scores
+ */
+function renderPlayerScores() {
+  const scoresDisplay = document.getElementById('scores-display');
+  if (!scoresDisplay) {
+    console.error('scores-display element not found in DOM');
+    return;
+  }
+
+  const scoresHtml = gameState.players.map(player => {
+    const escapedName = escapeHTML(player.name);
+    const score = gameState.scores[player.id] || 0;
+    return `
+      <div class="player-score-row">
+        <span class="player-name">${escapedName}</span>
+        <span class="player-score">${score}</span>
+      </div>
+    `;
+  }).join('');
+
+  scoresDisplay.innerHTML = `
+    <table class="scores-table">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${scoresHtml}
+      </tbody>
+    </table>
+  `;
 }
 
 /**
@@ -574,12 +480,9 @@ function updateGameStatus() {
   const gameStatusDiv = document.getElementById('game-status');
   if (!gameStatusDiv) return;
 
-  let statusHTML = `
-    <p>Round: ${gameState.currentRound}/${gameState.maxRounds}</p>
-    <p>Phase: ${gameState.currentPhase}</p>
-  `;
+  let statusHTML = `<p>Round: ${gameState.currentRound}/${gameState.maxRounds} | Phase: ${gameState.currentPhase}</p>`;
 
-  if (gameState.bids.length > 0) {
+  if (gameState.currentPhase === 'bid' && gameState.bids.length > 0) {
     statusHTML += `<p>Bids Collected: ${gameState.bids.length}/${gameState.players.length}</p>`;
   }
 
@@ -587,11 +490,19 @@ function updateGameStatus() {
 }
 
 /**
- * Get the current game state
- * @returns {Object} Current game state
+ * Handle new game button click
+ */
+function handleNewGame() {
+  console.log('Starting new game');
+  initializeGame(gameState.players);
+}
+
+/**
+ * Get the current game state (read-only copy)
+ * @returns {Object} Copy of current game state
  */
 function getGameState() {
-  return { ...gameState };
+  return JSON.parse(JSON.stringify(gameState));
 }
 
 /**
@@ -599,41 +510,40 @@ function getGameState() {
  * @returns {Array} Array of { playerId, bidAmount } objects
  */
 function getCurrentRoundBids() {
-  return [...gameState.bids];
+  return gameState.bids.map(bid => ({ ...bid }));
 }
 
 /**
  * Get the round history
- * @returns {Array} Array of round result objects
+ * @returns {Array} Array of round result objects with bids
  */
 function getRoundHistory() {
-  return [...gameState.roundHistory];
+  return JSON.parse(JSON.stringify(gameState.roundHistory));
 }
 
-// Export functions for use in other modules (if using module system)
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    initializeGame,
-    getGameState,
-    getCurrentRoundBids,
-    getRoundHistory,
-    startRound,
-    activateBidPhase,
-    handleBidSubmitted,
-    handleAllBidsSubmitted,
-    transitionToScoringPhase
-  };
-}
+// Export functions for use in other modules
+export {
+  initializeGame,
+  getGameState,
+  getCurrentRoundBids,
+  getRoundHistory,
+  startRound,
+  activateBidPhase,
+  handleBidSubmitted,
+  handleAllBidsSubmitted,
+  transitionToScoringPhase,
+  renderPlayerScores,
+  displayBidSummary
+};
 
-// Example initialization (comment out for production)
-// This would typically be triggered by a game setup interface
-/*
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize game on page load with test players
+// This can be overridden by external game setup interface
+window.addEventListener('DOMContentLoaded', () => {
   const testPlayers = [
-    { id: 'player1', name: 'Player 1' },
-    { id: 'player2', name: 'Player 2' },
-    { id: 'player3', name: 'Player 3' }
+    { id: 1, name: 'Player 1' },
+    { id: 2, name: 'Player 2' },
+    { id: 3, name: 'Player 3' },
+    { id: 4, name: 'Player 4' }
   ];
   initializeGame(testPlayers);
 });
-*/
