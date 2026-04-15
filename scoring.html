@@ -25,9 +25,9 @@
         </form>
 
         <div class="round-navigation">
-            <button class="btn btn-nav" id="prevRoundBtn" disabled>← Previous Round</button>
-            <div class="round-display" id="roundDisplay">Round 1 of <span id="totalRounds">13</span></div>
-            <button class="btn btn-nav" id="nextRoundBtn" disabled>Next Round →</button>
+            <button type="button" class="btn btn-nav" id="prevRoundBtn" disabled>← Previous Round</button>
+            <div class="round-display" id="roundDisplay">Round <span id="currentRound">1</span> of <span id="totalRounds">13</span></div>
+            <button type="button" class="btn btn-nav" id="nextRoundBtn" disabled>Next Round →</button>
         </div>
     </div>
 
@@ -100,17 +100,19 @@
                     id="bonus-${player.id}" 
                     name="bonus-${player.id}" 
                     class="bonus-input"
+                    min="0" 
                     value="0"
-                    min="0"
                     required
                 >
-                <span class="input-hint">default 0</span>
+                <span class="input-hint">Default: 0</span>
             `;
 
             const scoreDisplay = document.createElement('div');
             scoreDisplay.className = 'score-display';
-            scoreDisplay.id = `score-${player.id}`;
-            scoreDisplay.innerHTML = `<span class="score-label">Score:</span><span class="score-value">0</span>`;
+            scoreDisplay.innerHTML = `
+                <span class="score-label">Round Score:</span>
+                <span class="score-value" id="score-${player.id}">0</span>
+            `;
 
             card.appendChild(playerName);
             card.appendChild(bidDisplay);
@@ -121,114 +123,136 @@
             return card;
         }
 
-        // Validate form before submission
-        function validateForm() {
-            let isValid = true;
-            const formData = {};
+        // Calculate score for a player
+        function calculateScore(playerId) {
+            const player = players.find(p => p.id === playerId);
+            const tricksInput = document.getElementById(`tricks-${playerId}`);
+            const bonusInput = document.getElementById(`bonus-${playerId}`);
+            const scoreDisplay = document.getElementById(`score-${playerId}`);
 
-            players.forEach(player => {
-                const tricksInput = document.getElementById(`tricks-${player.id}`);
-                const bonusInput = document.getElementById(`bonus-${player.id}`);
-                
-                const tricks = parseInt(tricksInput.value, 10);
-                const bonus = parseInt(bonusInput.value, 10);
+            const tricks = parseInt(tricksInput.value) || 0;
+            const bonus = parseInt(bonusInput.value) || 0;
+            const bid = player.bid;
 
-                // Check tricks are within range
-                if (isNaN(tricks) || tricks < 0 || tricks > player.handCount) {
-                    tricksInput.classList.add('input-error');
-                    isValid = false;
-                } else {
-                    tricksInput.classList.remove('input-error');
-                }
-
-                // Check bonus are non-negative
-                if (isNaN(bonus) || bonus < 0) {
-                    bonusInput.classList.add('input-error');
-                    isValid = false;
-                } else {
-                    bonusInput.classList.remove('input-error');
-                }
-
-                formData[player.id] = { tricks, bonus };
-            });
-
-            return { isValid, formData };
-        }
-
-        // Update calculated scores
-        function updateScores() {
-            const { isValid, formData } = validateForm();
-
-            if (isValid) {
-                players.forEach(player => {
-                    const tricks = formData[player.id].tricks;
-                    const bonus = formData[player.id].bonus;
-                    const bid = player.bid;
-                    
-                    // Score calculation: if tricks == bid, score = bid + bonus; otherwise score = 0 + bonus
-                    let score = (tricks === bid) ? bid + bonus : 0 + bonus;
-                    
-                    scores[player.id] = { tricks, bonus, score };
-                    
-                    const scoreDisplay = document.getElementById(`score-${player.id}`);
-                    const scoreValue = scoreDisplay.querySelector('.score-value');
-                    scoreValue.textContent = score;
-                });
-
-                // Check if all inputs are valid to enable next button
-                checkFormCompletion();
+            let score = 0;
+            if (tricks === bid) {
+                // Player made their bid
+                score = bid * 10 + bonus;
+            } else {
+                // Player did not make their bid
+                score = -Math.abs(tricks - bid) * 10;
             }
+
+            scores[playerId].tricks = tricks;
+            scores[playerId].bonus = bonus;
+            scores[playerId].score = score;
+
+            scoreDisplay.textContent = score;
         }
 
-        // Check if form is complete and valid
-        function checkFormCompletion() {
-            const { isValid } = validateForm();
+        // Check if all form fields are filled
+        function isFormValid() {
+            const inputs = document.querySelectorAll('.tricks-input, .bonus-input');
+            for (const input of inputs) {
+                const value = input.value.trim();
+                if (value === '' || isNaN(parseInt(value))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // Update next round button state
+        function updateNextRoundButton() {
             const nextBtn = document.getElementById('nextRoundBtn');
-            
-            if (isValid) {
+            if (isFormValid() && currentRound < totalRounds) {
                 nextBtn.disabled = false;
             } else {
                 nextBtn.disabled = true;
             }
         }
 
-        // Form submission
-        function submitForm(e) {
-            e.preventDefault();
-            const { isValid, formData } = validateForm();
-
-            if (!isValid) {
-                alert('Please correct errors in the form.');
-                return;
-            }
-
-            console.log('Scores submitted for round ' + currentRound + ':', scores);
-            alert('Scores submitted successfully!');
-            // Here you would typically send the data to a backend or game logic
+        // Reset form to initial state
+        function resetForm() {
+            const inputs = document.querySelectorAll('.tricks-input, .bonus-input');
+            inputs.forEach(input => {
+                input.value = '0';
+            });
+            
+            // Recalculate all scores
+            players.forEach(player => {
+                calculateScore(player.id);
+            });
+            
+            updateNextRoundButton();
         }
 
-        // Reset form
-        function resetForm() {
-            document.getElementById('scoringForm').reset();
-            players.forEach(player => {
-                document.getElementById(`tricks-${player.id}`).value = '0';
-                document.getElementById(`bonus-${player.id}`).value = '0';
-                document.getElementById(`score-${player.id}`).querySelector('.score-value').textContent = '0';
-            });
-            checkFormCompletion();
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (isFormValid()) {
+                console.log('Scores submitted:', scores);
+                alert('Scores submitted for round ' + currentRound);
+            } else {
+                alert('Please fill in all fields before submitting.');
+            }
+        }
+
+        // Handle round navigation
+        function handlePrevRound() {
+            if (currentRound > 1) {
+                currentRound--;
+                updateRoundDisplay();
+                updateNavigationButtons();
+                resetForm();
+            }
+        }
+
+        function handleNextRound() {
+            if (isFormValid() && currentRound < totalRounds) {
+                currentRound++;
+                updateRoundDisplay();
+                updateNavigationButtons();
+                resetForm();
+            }
+        }
+
+        function updateRoundDisplay() {
+            document.getElementById('currentRound').textContent = currentRound;
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prevRoundBtn');
+            const nextBtn = document.getElementById('nextRoundBtn');
+            
+            prevBtn.disabled = currentRound <= 1;
+            updateNextRoundButton();
         }
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             initializeForm();
-            document.getElementById('totalRounds').textContent = totalRounds;
-            document.getElementById('scoringForm').addEventListener('submit', submitForm);
+            updateNavigationButtons();
+
+            // Add event listeners
+            document.getElementById('scoringForm').addEventListener('submit', handleFormSubmit);
             document.getElementById('resetBtn').addEventListener('click', resetForm);
-            
-            // Update scores on input change
-            const form = document.getElementById('scoringForm');
-            form.addEventListener('change', updateScores);
-            form.addEventListener('input', updateScores);
+            document.getElementById('prevRoundBtn').addEventListener('click', handlePrevRound);
+            document.getElementById('nextRoundBtn').addEventListener('click', handleNextRound);
+
+            // Add listeners for input changes
+            document.querySelectorAll('.tricks-input, .bonus-input').forEach(input => {
+                input.addEventListener('change', function() {
+                    const playerId = parseInt(this.id.split('-')[1]);
+                    calculateScore(playerId);
+                    updateNextRoundButton();
+                });
+                input.addEventListener('input', function() {
+                    const playerId = parseInt(this.id.split('-')[1]);
+                    calculateScore(playerId);
+                    updateNextRoundButton();
+                });
+            });
         });
     </script>
 </body>
