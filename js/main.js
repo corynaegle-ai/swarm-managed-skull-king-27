@@ -1,22 +1,23 @@
 import { collectBids } from './bid-phase.js';
 
-// Game state object with bids property and currentPhase field
 const gameState = {
   players: [],
-  currentPhase: 'initial',
+  scores: {},
+  currentPhase: 'bidding',
   bids: [],
-  scores: {}
 };
 
-/**
- * Start a new round of the game
- */
-function startRound() {
-  gameState.currentPhase = 'bidding';
-  gameState.bids = [];
-  collectBids(gameState.players, (bids) => {
-    gameState.bids = bids;
-  });
+function initGame(players) {
+  gameState.players = players;
+  gameState.scores = players.reduce((acc, player) => {
+    acc[player.id] = 0;
+    return acc;
+  }, {});
 }
 
-export { gameState, startRound };
+function startRound() {
+  gameState.currentPhase = 'bidding';
+  collectBids(gameState.players);
+}
+
+export { gameState, initGame, startRound };
