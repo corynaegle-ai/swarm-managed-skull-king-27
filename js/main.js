@@ -1,24 +1,15 @@
-import { collectBids } from "./bid-phase.js";
-
+// Game state object with bids property and currentPhase field
 const gameState = {
   players: [],
-  currentRound: 1,
-  totalRounds: 10,
+  scores: {},
   bids: [],
   currentPhase: 'setup',
 };
 
 function startRound() {
-  gameState.currentPhase = 'bidding';
-  updatePhaseDisplay();
-  collectBids();
-}
-
-function updatePhaseDisplay() {
-  const phaseDisplay = document.getElementById('current-phase');
-  const phaseIndicator = document.getElementById('phase-indicator');
-  phaseDisplay.textContent = gameState.currentPhase.charAt(0).toUpperCase() + gameState.currentPhase.slice(1);
-  phaseIndicator.textContent = gameState.currentPhase.charAt(0).toUpperCase() + gameState.currentPhase.slice(1) + ' Phase';
+  // Start the bidding phase
+  console.log('Starting round...');
+  // collectBids callback will be integrated by bid-phase module
 }
 
 export { gameState, startRound };
