@@ -1,12 +1,12 @@
-// Game state management
+import { collectBids } from './bid-phase.js';
+
 const gameState = {
   players: [],
   scores: {},
-  currentPhase: 'initial',
-  bids: []
+  currentPhase: 'bidding',
+  bids: [],
 };
 
-// Initialize game
 function initGame(players) {
   gameState.players = players;
   gameState.scores = players.reduce((acc, player) => {
@@ -15,10 +15,9 @@ function initGame(players) {
   }, {});
 }
 
-// Start a new round
 function startRound() {
-  // Round logic will be implemented here
+  gameState.currentPhase = 'bidding';
+  collectBids(gameState.players);
 }
 
-// Export game state and functions
 export { gameState, initGame, startRound };
