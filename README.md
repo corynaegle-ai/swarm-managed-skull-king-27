@@ -54,8 +54,8 @@ See [README_SCORING.md](./README_SCORING.md) for complete scoring rules document
 ### Quick Reference
 
 **Non-Zero Bids:**
-- Exact: `+20 × tricks + 10 × hands`
-- Missed: `-10 × |bid - tricks|`
+- Exact: `+20 × bid + 10 × hands` (when bid == tricks)
+- Missed: `-10 × |bid - tricks|` (when bid != tricks)
 
 **Zero Bids:**
 - Exact (0 tricks): `+10 × hands`
@@ -97,9 +97,9 @@ Validates a round against game rules.
 ### Example 1: Perfect Round
 ```javascript
 const result = calculateRoundScore(4, 4, 1);
-// bid: 4, tricks: 4
+// bid: 4, tricks: 4 (exact match)
 // Base: 20 × 4 = 80
-// Bonus: 10 × 1 = 10
+// Bonus: 10 × 1 = 10 (applied because bid was exact)
 // Total: 90
 ```
 
@@ -130,13 +130,13 @@ const result = calculateRoundScore(0, 1, 1);
 ### Example 5: Full Game
 ```javascript
 const gameRounds = [
-  { bid: 5, tricks: 5, hands: 1 }, // Score: 110
-  { bid: 3, tricks: 3, hands: 1 }, // Score: 70
-  { bid: 0, tricks: 0, hands: 1 }  // Score: 10
+  { bid: 5, tricks: 5, hands: 1 }, // Exact: 20×5 + 10×1 = 110
+  { bid: 3, tricks: 3, hands: 1 }, // Exact: 20×3 + 10×1 = 70
+  { bid: 0, tricks: 0, hands: 1 }  // Exact: 10×1 = 10
 ];
 
 const game = calculateTotalScore(gameRounds);
-console.log(game.totalScore); // 190
+console.log(game.totalScore); // 190 (110 + 70 + 10)
 ```
 
 ## Acceptance Criteria Status
