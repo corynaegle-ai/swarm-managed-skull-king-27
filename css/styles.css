@@ -29,6 +29,114 @@ body {
 }
 
 /* ============================= */
+/* Player Setup Styles            */
+/* ============================= */
+
+.player-setup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+#player-setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.form-group input {
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.player-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.player-list-item .player-name {
+  color: #333;
+  font-size: 1rem;
+}
+
+.player-list-item button {
+  padding: 6px 12px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.player-list-item button:hover {
+  background: #ff5252;
+  transform: translateY(-2px);
+}
+
+#start-game-btn {
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  align-self: center;
+  min-width: 200px;
+}
+
+#start-game-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+#start-game-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+#start-game-btn:disabled {
+  background: #ccc;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================= */
 /* Header Styles                  */
 /* ============================= */
 
@@ -279,5 +387,13 @@ body {
 
   .app-main {
     padding: 20px 15px;
+  }
+
+  #start-game-btn {
+    min-width: 100%;
+  }
+
+  .player-setup-section {
+    gap: 15px;
   }
 }
