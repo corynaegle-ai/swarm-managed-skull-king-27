@@ -29,10 +29,12 @@ This document describes the Skull King scoring rules as implemented in `src/scor
 **Example:** Bid 0, took 0 tricks, 2 hands = 10 × 2 = 20 points
 
 **Missed Zero Bid (bid == 0 AND tricks > 0):**
-- Score: `-10 × hands` (penalty for taking any tricks)
+- Score: `-10 × hands` (fixed penalty based on hand count, regardless of tricks taken)
 - No bonus points
+- The penalty is calculated as `-10 × hands`, not `-10 × tricks`. For example, taking 1 trick or 3 tricks in the same hand both incur the same penalty if hands are equal.
 
 **Example:** Bid 0, took 1 trick, 1 hand = -10 × 1 = -10 points
+**Example:** Bid 0, took 3 tricks, 1 hand = -10 × 1 = -10 points (same penalty, as hands are equal)
 
 ## Key Rules
 
