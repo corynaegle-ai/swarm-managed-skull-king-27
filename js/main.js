@@ -21,7 +21,7 @@ const gameState = {
 
   // Scores and history
   scores: {}, // { playerId: currentScore }
-  roundHistory: [] // Array of round results with bids
+  roundHistory: [] // Array of round results with bids and validation
 };
 
 /**
@@ -30,7 +30,12 @@ const gameState = {
  */
 function initializeGame(playerList) {
   if (!playerList || !Array.isArray(playerList) || playerList.length === 0) {
-    console.error('Invalid player list provided to initializeGame');
+    const errorMsg = 'Invalid player list: must be a non-empty array';
+    console.error(errorMsg);
+    const gameStatusEl = document.getElementById('game-status');
+    if (gameStatusEl) {
+      gameStatusEl.textContent = `Error: ${errorMsg}`;
+    }
     return;
   }
 
@@ -125,13 +130,19 @@ function activateBidPhase() {
  * @param {number} bidAmount - The bid amount (number of tricks)
  */
 function handleBidSubmitted(playerId, bidAmount) {
+  // Validate playerId
   if (playerId === null || playerId === undefined) {
-    console.error('Invalid playerId provided');
+    const errorMsg = 'Invalid playerId: cannot be null or undefined';
+    console.error(errorMsg);
+    showErrorMessage(errorMsg);
     return;
   }
 
-  if (typeof bidAmount !== 'number' || bidAmount < 0) {
-    console.error('Invalid bidAmount provided:', bidAmount);
+  // Validate bidAmount: must be a non-negative integer
+  if (typeof bidAmount !== 'number' || !Number.isInteger(bidAmount) || bidAmount < 0) {
+    const errorMsg = `Invalid bidAmount: must be a non-negative integer, got ${bidAmount}`;
+    console.error(errorMsg);
+    showErrorMessage(errorMsg);
     return;
   }
 
@@ -151,8 +162,30 @@ function handleBidSubmitted(playerId, bidAmount) {
 
   // Check if all players have submitted bids
   if (gameState.bids.length === gameState.players.length) {
-    displayBidSummary();
+    transitionToSummary();
   }
+}
+
+/**
+ * Show error message to user
+ * @param {string} message - The error message to display
+ */
+function showErrorMessage(message) {
+  const gameStatusEl = document.getElementById('game-status');
+  if (gameStatusEl) {
+    gameStatusEl.textContent = `Error: ${message}`;
+    gameStatusEl.style.color = 'red';
+  }
+}
+
+/**
+ * Transition to summary phase after all bids are collected
+ */
+function transitionToSummary() {
+  console.log('All bids collected, transitioning to summary phase');
+  gameState.currentPhase = 'summary';
+  updateGameStatus();
+  displayBidSummary();
 }
 
 /**
@@ -236,17 +269,23 @@ function displayBidSummary() {
 
 /**
  * Handle the proceed to scoring button click
- * Transitions to scoring phase and processes round bids
+ * Saves bids to history and transitions to scoring phase
+ * CRITICAL: Bids are stored in roundHistory BEFORE clearing gameState.bids,
+ * so they can be retrieved and validated in activateScoringPhase
  */
 function handleProceedToScoring() {
   console.log('Proceeding to scoring phase');
 
-  // Save current round bids to history (bids still available in gameState.bids)
+  // Save current round bids to history BEFORE clearing gameState.bids
+  // This allows scoring phase to retrieve and validate bids
   const roundEntry = {
     round: gameState.currentRound,
-    bids: [...gameState.bids]
+    bids: [...gameState.bids], // Deep copy to preserve bid data
+    trickResults: {} // Placeholder for trick data to be filled in later
   };
   gameState.roundHistory.push(roundEntry);
+
+  console.log('Saved round entry to history:', roundEntry);
 
   // Transition to scoring phase
   gameState.currentPhase = 'scoring';
@@ -258,7 +297,8 @@ function handleProceedToScoring() {
 
 /**
  * Activate the scoring phase
- * Processes bids, calculates scores, and prepares for next round
+ * Retrieves bids from roundHistory for current round, validates them,
+ * and prepares for next round transition
  */
 function activateScoringPhase() {
   console.log('Activating scoring phase for round', gameState.currentRound);
@@ -277,20 +317,90 @@ function activateScoringPhase() {
   heading.textContent = `Round ${gameState.currentRound} - Scoring`;
   bidPhaseContainer.appendChild(heading);
 
-  // Create scoring content
+  // Retrieve bids for current round from roundHistory
+  const currentRoundEntry = gameState.roundHistory.find(entry => entry.round === gameState.currentRound);
+  if (!currentRoundEntry || !currentRoundEntry.bids || currentRoundEntry.bids.length === 0) {
+    console.error('No bids found for current round in roundHistory');
+    return;
+  }
+
+  const roundBids = currentRoundEntry.bids;
+  console.log('Retrieved bids for scoring:', roundBids);
+
+  // Create scoring content container
   const scoringContent = document.createElement('div');
   scoringContent.className = 'scoring-content';
 
-  // Show bids being validated
-  const bidsList = document.createElement('p');
-  bidsList.textContent = `Validating ${gameState.bids.length} player bids for scoring...`;
-  scoringContent.appendChild(bidsList);
+  // Display bid validation section
+  const validationHeading = document.createElement('h3');
+  validationHeading.textContent = 'Bid Validation';
+  scoringContent.appendChild(validationHeading);
 
-  // For now, stub out scoring logic - in full implementation, this would:
-  // - Compare actual tricks won vs bids
-  // - Calculate points based on game rules
-  // - Update gameState.scores
-  // - Display final scores for the round
+  // Create table for bid validation
+  const validationTable = document.createElement('table');
+  validationTable.className = 'scoring-validation-table';
+
+  const thead = document.createElement('thead');
+  const headerRow = document.createElement('tr');
+
+  const playerHeader = document.createElement('th');
+  playerHeader.textContent = 'Player';
+  headerRow.appendChild(playerHeader);
+
+  const bidHeader = document.createElement('th');
+  bidHeader.textContent = 'Bid';
+  headerRow.appendChild(bidHeader);
+
+  const tricksHeader = document.createElement('th');
+  tricksHeader.textContent = 'Tricks Won';
+  headerRow.appendChild(tricksHeader);
+
+  const statusHeader = document.createElement('th');
+  statusHeader.textContent = 'Status';
+  headerRow.appendChild(statusHeader);
+
+  thead.appendChild(headerRow);
+  validationTable.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  // Process each bid for validation
+  roundBids.forEach(bid => {
+    const player = gameState.players.find(p => p.id === bid.playerId);
+    if (!player) return;
+
+    const row = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    nameCell.textContent = player.name;
+    row.appendChild(nameCell);
+
+    const bidCell = document.createElement('td');
+    bidCell.textContent = bid.bidAmount;
+    row.appendChild(bidCell);
+
+    // Placeholder for actual tricks won (in full implementation, this would come from trick tracking)
+    const tricksWonCell = document.createElement('td');
+    tricksWonCell.textContent = '0'; // Placeholder: would be populated by trick tracking system
+    row.appendChild(tricksWonCell);
+
+    // Validation status
+    const statusCell = document.createElement('td');
+    // In full implementation: compare bid to tricks won and calculate points
+    statusCell.textContent = 'Pending trick data'; // Placeholder status
+    row.appendChild(statusCell);
+
+    tbody.appendChild(row);
+  });
+
+  validationTable.appendChild(tbody);
+  scoringContent.appendChild(validationTable);
+
+  // Add info message about bid validation
+  const infoMsg = document.createElement('p');
+  infoMsg.className = 'scoring-info';
+  infoMsg.textContent = `Validating ${roundBids.length} player bids against actual tricks won. Bids stored and available for scoring calculations.`;
+  scoringContent.appendChild(infoMsg);
 
   bidPhaseContainer.appendChild(scoringContent);
 
@@ -315,7 +425,7 @@ function activateScoringPhase() {
 function handleNextRound() {
   console.log('Advancing to next round');
 
-  // Clear bids now that scoring is complete
+  // Clear bids from current round now that scoring is complete
   gameState.bids = [];
 
   // Advance round counter
@@ -369,28 +479,15 @@ function endGame() {
 }
 
 /**
- * Export functions for external use (e.g., test harness or UI controller)
+ * Export functions for external use via window object (ES module context)
+ * This is the proper way to expose functions in ES module files
  */
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    gameState,
-    initializeGame,
-    startRound,
-    updateGameStatus,
-    renderRoundInfo,
-    activateBidPhase,
-    handleBidSubmitted,
-    displayBidSummary,
-    handleProceedToScoring,
-    activateScoringPhase,
-    handleNextRound,
-    endGame
-  };
-}
-
-// Game initialization hook - allows external code to initialize the game
-// by calling window.skullKingGame.initializeGame(players)
 window.skullKingGame = {
   initializeGame,
-  gameState
+  gameState,
+  // Additional exports for testing/debugging
+  startRound,
+  handleBidSubmitted,
+  handleProceedToScoring,
+  handleNextRound
 };
