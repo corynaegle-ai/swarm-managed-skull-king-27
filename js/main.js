@@ -1,21 +1,31 @@
-import { collectBids } from "./bid-phase.js";
-
+// Game state object with bids property and currentPhase field
 const gameState = {
-  players: [],
+  currentPhase: 'initial',
   scores: {},
-  currentRound: 1,
-  totalRounds: 10,
   bids: [],
   currentPhase: 'setup'
 };
 
 function startRound() {
-  console.log(`Starting round ${gameState.currentRound}...`);
+  gameState.currentPhase = 'bidding';
+  // Bid collection will be integrated here by another ticket
+  console.log('Round started - waiting for bid collection integration');
 }
 
-function endRound() {
-  console.log(`Ending round ${gameState.currentRound}...`);
-  gameState.currentRound++;
+function initializeGame(playerNames) {
+  gameState.scores = {};
+  playerNames.forEach(name => {
+    gameState.scores[name] = 0;
+  });
+  console.log('Game initialized with players:', playerNames);
 }
 
-export { gameState, startRound };
+function recordBid(playerId, bidAmount) {
+  gameState.bids.push({ playerId, bidAmount });
+}
+
+function resetBidsForRound() {
+  gameState.bids = [];
+}
+
+export { gameState, startRound, initializeGame, recordBid, resetBidsForRound };
