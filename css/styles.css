@@ -348,6 +348,69 @@ body {
 }
 
 /* ============================= */
+/* Backward Compatibility Styles  */
+/* ============================= */
+
+#player-name-input {
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+#player-name-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.no-players-message {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.game-controls-section {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.player-scores-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 0;
+}
+
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.final-scores-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 30px 20px;
+}
+
+.game-info-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 5px solid #667eea;
+}
+
+/* ============================= */
 /* Footer Styles                  */
 /* ============================= */
 
