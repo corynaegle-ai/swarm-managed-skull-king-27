@@ -1,37 +1,41 @@
-// Game state management
+import { collectBids } from './bid-phase.js';
+
+// Initialize game state
 const gameState = {
   players: [],
   scores: {},
   currentPhase: 'bidding',
-  bids: []
+  bids: [],
 };
 
-// Initialize the game
-function initializeGame(playerNames) {
-  gameState.players = playerNames;
-  gameState.scores = playerNames.reduce((acc, name) => {
-    acc[name] = 0;
-    return acc;
-  }, {});
-  gameState.currentPhase = 'bidding';
-  gameState.bids = [];
+// Initialize player scores table
+function renderPlayerScores() {
+  const scoreTable = document.querySelector('#player-scores-table tbody');
+  scoreTable.innerHTML = '';
+  gameState.players.forEach((player) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${player}</td>
+      <td>${gameState.scores[player] || 0}</td>
+    `;
+    scoreTable.appendChild(row);
+  });
 }
 
-// Start a new round
+// Simulate round play
 function startRound() {
+  console.log('Round started');
   gameState.currentPhase = 'bidding';
-  gameState.bids = [];
-  // Additional round logic will be added by sibling tickets
+  document.getElementById('current-phase').textContent = 'Bidding';
+  collectBids();
 }
 
-// Update game phase
-function setPhase(phase) {
-  gameState.currentPhase = phase;
+// Finish round
+function endRound() {
+  console.log('Round ended');
+  gameState.currentPhase = 'scoring';
+  document.getElementById('current-phase').textContent = 'Scoring';
 }
 
-// Get current game state
-function getGameState() {
-  return gameState;
-}
-
-export { gameState, initializeGame, startRound, setPhase, getGameState };
+// Export functions for use in other modules
+export { gameState, renderPlayerScores, startRound, endRound };
