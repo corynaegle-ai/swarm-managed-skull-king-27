@@ -1,158 +1,144 @@
-# Skull King Scoring Engine Documentation
+# Skull King Scoring Engine
 
 ## Overview
-
-The Skull King Scoring Engine implements the complex scoring rules for the Skull King card game. It provides accurate score calculation for both individual rounds and complete games.
+This document describes the Skull King scoring rules as implemented in `src/scoring.js`.
 
 ## Scoring Rules
 
 ### Non-Zero Bid Scoring
 
-When a player bids a number greater than zero:
+**Exact Bid (bid == tricks):**
+- Base score: `+20 × tricks`
+- Bonus: `+10 × hands` (only applied when bid is exact)
+- Total: `(20 × tricks) + (10 × hands)`
 
-- **Exact Bid**: +20 points per trick taken, plus automatic bonus of +10 × hand count
-- **Missed Bid**: -10 points per difference between bid and tricks taken, no bonus
+**Example:** Bid 5, took 5 tricks, 1 hand = (20×5) + (10×1) = 110 points
 
-**Examples:**
-- Bid 5, took 5 tricks (1 hand): 20 × 5 + 10 × 1 = 100 + 10 = **110 points**
-- Bid 5, took 3 tricks (1 hand): -10 × 2 = **-20 points** (no bonus)
-- Bid 3, took 3 tricks (2 hands): 20 × 3 + 10 × 2 = 60 + 20 = **80 points**
+**Missed Bid (bid ≠ tricks):**
+- Score: `-10 × |bid - tricks|` (penalty based on difference)
+- No bonus points applied
+
+**Example:** Bid 5, took 3 tricks = -10 × |5-3| = -20 points
 
 ### Zero Bid Scoring
 
-When a player bids zero (attempting to take no tricks):
+**Exact Zero Bid (bid == 0 AND tricks == 0):**
+- Score: `+10 × hands`
+- No bonus points (zero bids don't receive bonuses)
 
-- **Exact Bid** (0 tricks taken): +10 × hand count
-- **Missed Bid** (any tricks taken): -10 × hand count
-- **Important**: Zero bids never receive bonus points, even if exact
+**Example:** Bid 0, took 0 tricks, 2 hands = 10 × 2 = 20 points
 
-**Examples:**
-- Bid 0, took 0 tricks (1 hand): +10 × 1 = **10 points**
-- Bid 0, took 0 tricks (3 hands): +10 × 3 = **30 points**
-- Bid 0, took 1 trick (1 hand): -10 × 1 = **-10 points**
-- Bid 0, took 2 tricks (2 hands): -10 × 2 = **-20 points**
+**Missed Zero Bid (bid == 0 AND tricks > 0):**
+- Score: `-10 × hands` (penalty for taking any tricks)
+- No bonus points
 
-### Bonus Points
+**Example:** Bid 0, took 1 trick, 1 hand = -10 × 1 = -10 points
 
-- **When Applied**: ONLY when a non-zero bid is exactly met
-- **Amount**: 10 × number of hands in the current game
-- **Zero Bids**: Never receive bonus points
-- **Missed Non-Zero Bids**: Do not receive bonus points
+## Key Rules
 
-## API Reference
+1. **Bonus points only apply to exact non-zero bids** - If you bid non-zero and meet it exactly, you get the +10×hands bonus
+2. **Zero bids have no bonus** - Even if you bid 0 and take 0 tricks (exact), you only get the base +10×hands
+3. **Missed bids have no bonus** - If you bid non-zero but don't meet it exactly, bonus is forfeited
+4. **Score accumulates across rounds** - Total score is the sum of all round scores
+
+## API
 
 ### calculateRoundScore(bid, tricks, hands)
-
 Calculates the score for a single round.
 
 **Parameters:**
-- `bid` (number): The number of tricks bid (0 or positive integer)
-- `tricks` (number): The number of tricks actually taken (0 or positive integer)
-- `hands` (number): The number of hands/rounds in the game (positive integer)
+- `bid` (number): The bid for this round (0 or greater)
+- `tricks` (number): The tricks actually taken
+- `hands` (number): The hand count for this round
 
-**Returns:** Object with:
-- `baseScore` (number): Score before bonus
-- `bonus` (number): Bonus points (0 if not applicable)
-- `totalScore` (number): Final score (baseScore + bonus)
-- `breakdown` (object): Detailed scoring breakdown including:
-  - `bid`: The bid value
-  - `tricks`: Tricks taken
-  - `hands`: Hand count
-  - `rule`: Scoring rule applied
-  - `formula`: Mathematical formula used
-  - `bonus`: Bonus description
-  - `calculation`: Complete calculation shown
+**Returns:**
+```javascript
+{
+  bid: number,
+  tricks: number,
+  hands: number,
+  baseScore: number,
+  bonusScore: number,
+  totalScore: number,
+  exact: boolean
+}
+```
 
 **Example:**
 ```javascript
 const result = calculateRoundScore(5, 5, 1);
-// Returns:
 // {
+//   bid: 5,
+//   tricks: 5,
+//   hands: 1,
 //   baseScore: 100,
-//   bonus: 10,
+//   bonusScore: 10,
 //   totalScore: 110,
-//   breakdown: {
-//     bid: 5,
-//     tricks: 5,
-//     hands: 1,
-//     rule: 'Non-zero bid - exact',
-//     formula: '+20 × 5',
-//     bonus: '+10 × 1 (automatic for exact bid)',
-//     calculation: '100 + 10 = 110'
-//   }
+//   exact: true
 // }
 ```
 
 ### calculateTotalScore(rounds)
-
-Calculates cumulative score across multiple rounds.
+Calculates the total score across multiple rounds.
 
 **Parameters:**
-- `rounds` (array): Array of round objects, each containing:
-  - `bid` (number): The bid for that round
-  - `tricks` (number): Tricks taken that round
-  - `hands` (number): Hand count for that round
+- `rounds` (array): Array of round objects with {bid, tricks, hands}
 
-**Returns:** Object with:
-- `totalScore` (number): Sum of all round scores
-- `rounds` (array): Array of round breakdowns with details and individual round totals
+**Returns:**
+```javascript
+{
+  totalScore: number,
+  rounds: array,
+  roundCount: number
+}
+```
 
 **Example:**
 ```javascript
 const result = calculateTotalScore([
-  { bid: 5, tricks: 5, hands: 1 },  // 110 points
-  { bid: 3, tricks: 3, hands: 1 },  // 70 points
-  { bid: 0, tricks: 0, hands: 1 }   // 10 points
+  { bid: 5, tricks: 5, hands: 1 },
+  { bid: 3, tricks: 3, hands: 1 },
+  { bid: 0, tricks: 0, hands: 1 }
 ]);
-// Returns: { totalScore: 190, rounds: [...] }
+// {
+//   totalScore: 190,
+//   rounds: [...],
+//   roundCount: 3
+// }
 ```
 
-### validateRoundScoring(bid, tricks, hands, expectedScore)
-
-Validates that a round scores correctly.
+### validateRoundScoring(round)
+Validates that a round follows all Skull King rules.
 
 **Parameters:**
-- `bid`, `tricks`, `hands`: Same as calculateRoundScore
-- `expectedScore` (number): The score expected
+- `round` (object): Round object with {bid, tricks, hands}
 
-**Returns:** Boolean - true if calculated score matches expected
-
-**Example:**
+**Returns:**
 ```javascript
-const isCorrect = validateRoundScoring(5, 5, 1, 110);
-// Returns: true
+{
+  valid: boolean,
+  errors: array,
+  warnings: array
+}
 ```
+
+## Test Coverage
+
+The implementation includes comprehensive test coverage (40+ tests) verifying:
+
+1. ✅ Non-zero bid exact scoring with bonus
+2. ✅ Non-zero bid missed scoring without bonus
+3. ✅ Zero bid exact scoring without bonus
+4. ✅ Zero bid missed scoring
+5. ✅ Bonus points only apply to exact non-zero bids
+6. ✅ Score accumulation across multiple rounds
+7. ✅ Transparent score breakdown per round
+8. ✅ Input validation and error handling
 
 ## Implementation Details
 
-### Key Decisions
-
-1. **Bonus Automation**: Bonus points are automatically calculated and applied when the criteria are met. The bonus is NOT a user-entered parameter but is computed automatically: when a non-zero bid is exactly met, the engine automatically adds +10 × hands. The function signature is simple (3 parameters for round score: bid, tricks, hands) with no separate bonus parameter.
-
-2. **Zero Bid Rules**: Zero bids follow a distinct scoring path with no bonus application, simplifying the logic and preventing confusion.
-
-3. **Transparency**: Every score calculation includes a detailed breakdown showing the rule applied, formula used, and complete calculation, enabling easy verification and debugging.
-
-4. **Input Validation**: All parameters are validated before calculation to prevent invalid scores.
-
-## Testing
-
-The implementation includes comprehensive test coverage:
-
-- **40+ test cases** covering all scoring scenarios
-- **Edge cases**: High hand counts, boundary conditions, empty game rounds
-- **Input validation**: Tests for invalid bids, tricks, and hands
-- **Breakdown verification**: Tests that score breakdowns are accurate and transparent
-- **Acceptance criteria coverage**: Each criterion is explicitly tested
-
-## Error Handling
-
-The scoring engine throws descriptive errors for invalid inputs:
-
-```javascript
-try {
-  calculateRoundScore(-1, 0, 1);
-} catch (e) {
-  // Error: Invalid bid: -1. Bid must be a non-negative integer.
-}
-```
+- **Input Validation:** All functions validate inputs and throw errors for invalid data
+- **Transparent Breakdown:** Score calculations show base score, bonus score, and total separately
+- **Exact Tracking:** Each round's breakdown includes an `exact` flag indicating if bid was met
+- **No Side Effects:** Functions are pure and don't modify input data
+- **Clear Comments:** Code is well-commented for maintainability

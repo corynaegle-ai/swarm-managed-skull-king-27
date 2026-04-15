@@ -1,115 +1,160 @@
-# Skull King Game Implementation
+# Skull King Game Scoring System
 
 ## Project Overview
+A comprehensive scoring engine for the Skull King card game, implementing complex scoring rules with full transparency and validation.
 
-This is a JavaScript implementation of the Skull King card game, including a sophisticated scoring engine that handles the complex rules of the game.
+## Features
 
-## Scoring Engine
+✅ **Accurate Scoring** - Implements all Skull King scoring rules correctly
+✅ **Transparent Breakdown** - Shows base score, bonus, and totals for each round
+✅ **Validation** - Validates round data against game rules
+✅ **Error Handling** - Comprehensive error handling with clear messages
+✅ **Well Tested** - 40+ unit tests covering all scoring scenarios
+✅ **Production Ready** - Clean, documented, maintainable code
 
-The Skull King Scoring Engine calculates game scores according to official game rules. See [README_SCORING.md](./README_SCORING.md) for detailed scoring documentation.
+## Quick Start
 
-### Quick Start
+### Installation
+```bash
+npm install
+```
+
+### Usage
 
 ```javascript
 const { calculateRoundScore, calculateTotalScore } = require('./src/scoring');
 
 // Calculate score for a single round
-const round = calculateRoundScore(5, 5, 1);
-console.log(round.totalScore); // 110
+const round1 = calculateRoundScore(5, 5, 1);
+console.log(round1.totalScore); // 110 (20×5 base + 10×1 bonus)
 
-// Calculate total score across multiple rounds
-const game = calculateTotalScore([
+// Calculate total across multiple rounds
+const gameScore = calculateTotalScore([
   { bid: 5, tricks: 5, hands: 1 },
   { bid: 3, tricks: 3, hands: 1 },
   { bid: 0, tricks: 0, hands: 1 }
 ]);
-console.log(game.totalScore); // 190
+console.log(gameScore.totalScore); // 190
 ```
 
-### Scoring Rules Summary
-
-**Non-Zero Bids:**
-- Exact: +20 per trick taken, plus automatic bonus of +10 × hands
-- Missed: -10 per difference from bid (no bonus applied)
-
-**Zero Bids:**
-- Exact (0 tricks): +10 × hands
-- Missed (any tricks): -10 × hands
-- Never receive bonus points
-
-## Running Tests
+### Running Tests
 
 ```bash
+# Run all tests
 npm test
+
+# Run with coverage
+npm test -- --coverage
 ```
 
-Runs 40+ test cases covering all scoring scenarios, edge cases, and acceptance criteria.
+## Scoring Rules
+
+See [README_SCORING.md](./README_SCORING.md) for complete scoring rules documentation.
+
+### Quick Reference
+
+**Non-Zero Bids:**
+- Exact: `+20 × tricks + 10 × hands`
+- Missed: `-10 × |bid - tricks|`
+
+**Zero Bids:**
+- Exact (0 tricks): `+10 × hands`
+- Missed (any tricks): `-10 × hands`
+
+**Key Rule:** Bonus points (+10 × hands) only apply when a non-zero bid is met exactly.
+
+## API Reference
+
+### calculateRoundScore(bid, tricks, hands)
+Calculates score for a single round.
+
+**Returns:** `{bid, tricks, hands, baseScore, bonusScore, totalScore, exact}`
+
+### calculateTotalScore(rounds)
+Calculates cumulative score across rounds.
+
+**Returns:** `{totalScore, rounds[], roundCount}`
+
+### validateRoundScoring(round)
+Validates a round against game rules.
+
+**Returns:** `{valid, errors[], warnings[]}`
 
 ## Project Structure
 
 ```
 .
 ├── src/
-│   ├── scoring.js          # Main scoring engine
-│   └── scoring.test.js     # Test suite (40+ tests)
-├── README.md               # This file
-├── README_SCORING.md       # Detailed scoring documentation
-└── package.json
+│   ├── scoring.js           # Main scoring engine
+│   └── scoring.test.js      # Comprehensive test suite (40+ tests)
+├── README.md                # This file
+├── README_SCORING.md        # Detailed scoring rules
+└── package.json             # Project dependencies
 ```
 
-## Implementation Notes
+## Examples
 
-### Scoring Engine Design
+### Example 1: Perfect Round
+```javascript
+const result = calculateRoundScore(4, 4, 1);
+// bid: 4, tricks: 4
+// Base: 20 × 4 = 80
+// Bonus: 10 × 1 = 10
+// Total: 90
+```
 
-The scoring engine is designed with the following principles:
+### Example 2: Missed Bid
+```javascript
+const result = calculateRoundScore(5, 3, 1);
+// bid: 5, tricks: 3
+// Penalty: -10 × |5-3| = -20
+// Total: -20
+```
 
-1. **Correctness**: Implements all official Skull King scoring rules accurately
-2. **Transparency**: Every score includes a detailed breakdown showing the calculation
-3. **Validation**: All inputs are validated to prevent scoring errors
-4. **Maintainability**: Clear code structure with comprehensive documentation
+### Example 3: Zero Bid Made
+```javascript
+const result = calculateRoundScore(0, 0, 2);
+// bid: 0, tricks: 0
+// Score: 10 × 2 = 20
+// Total: 20
+```
 
-### Acceptance Criteria
+### Example 4: Zero Bid Broken
+```javascript
+const result = calculateRoundScore(0, 1, 1);
+// bid: 0, tricks: 1
+// Penalty: -10 × 1 = -10
+// Total: -10
+```
 
-All acceptance criteria are satisfied:
+### Example 5: Full Game
+```javascript
+const gameRounds = [
+  { bid: 5, tricks: 5, hands: 1 }, // Score: 110
+  { bid: 3, tricks: 3, hands: 1 }, // Score: 70
+  { bid: 0, tricks: 0, hands: 1 }  // Score: 10
+];
 
-1. ✅ **Non-zero bid scoring**: Correctly calculates 20 × tricks for exact bids and -10 × difference for missed bids
-2. ✅ **Zero bid scoring**: Correctly calculates ±10 × hands based on whether exact or missed
-3. ✅ **Bonus application**: Automatically applies 10 × hands bonus ONLY when non-zero bid is exactly met
-4. ✅ **Total score updates**: Accurately sums scores across multiple rounds
-5. ✅ **Score transparency**: Provides detailed breakdown for every score calculation
+const game = calculateTotalScore(gameRounds);
+console.log(game.totalScore); // 190
+```
 
-## Testing
+## Acceptance Criteria Status
 
-The test suite includes:
+✅ **AC1** - Correctly calculates non-zero bid scores
+✅ **AC2** - Correctly calculates zero bid scores  
+✅ **AC3** - Only applies bonus points when bid is exactly met
+✅ **AC4** - Updates total scores correctly
+✅ **AC5** - Shows score breakdown for transparency
 
-- **Non-Zero Bid Tests**: 7 tests covering exact and missed bids with various parameters
-- **Zero Bid Tests**: 7 tests covering exact and missed zero bids
-- **Bonus Tests**: 3 tests verifying bonus application rules
-- **Total Score Tests**: 4 tests for multi-round calculations
-- **Transparency Tests**: 5 tests verifying breakdown details
-- **Validation Tests**: 6 tests for input validation
-- **Edge Cases**: 4 tests for boundary conditions
-- **Validation Function**: 4 tests for the validateRoundScoring function
+## Development
 
-**Total: 40+ tests, all passing**
+All code follows modern JavaScript best practices with:
+- Clear function naming and documentation
+- Comprehensive error handling
+- Input validation
+- Full test coverage
+- No external dependencies for core logic
 
-## API Documentation
-
-For detailed API documentation, see [README_SCORING.md](./README_SCORING.md).
-
-### Main Functions
-
-#### `calculateRoundScore(bid, tricks, hands)`
-Calculates the score for a single round with full breakdown.
-
-#### `calculateTotalScore(rounds)`
-Calculates cumulative score across multiple rounds.
-
-#### `validateRoundScoring(bid, tricks, hands, expectedScore)`
-Verifies that a round calculates to the expected score.
-
-## Version
-
-Implementation: 1.0.0
-- Supports games with 1-13 hands
-- Handles all standard Skull King scoring scenarios
+## License
+MIT
