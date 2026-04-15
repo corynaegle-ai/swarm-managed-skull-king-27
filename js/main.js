@@ -1,41 +1,24 @@
-import { collectBids } from './bid-phase.js';
-
-// Initialize game state
+// Game state management
 const gameState = {
   players: [],
   scores: {},
-  currentPhase: 'bidding',
-  bids: [],
+  currentPhase: 'initial',
+  bids: []
 };
 
-// Initialize player scores table
-function renderPlayerScores() {
-  const scoreTable = document.querySelector('#player-scores-table tbody');
-  scoreTable.innerHTML = '';
-  gameState.players.forEach((player) => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${player}</td>
-      <td>${gameState.scores[player] || 0}</td>
-    `;
-    scoreTable.appendChild(row);
-  });
+// Initialize game
+function initGame(players) {
+  gameState.players = players;
+  gameState.scores = players.reduce((acc, player) => {
+    acc[player.id] = 0;
+    return acc;
+  }, {});
 }
 
-// Simulate round play
+// Start a new round
 function startRound() {
-  console.log('Round started');
-  gameState.currentPhase = 'bidding';
-  document.getElementById('current-phase').textContent = 'Bidding';
-  collectBids();
+  // Round logic will be implemented here
 }
 
-// Finish round
-function endRound() {
-  console.log('Round ended');
-  gameState.currentPhase = 'scoring';
-  document.getElementById('current-phase').textContent = 'Scoring';
-}
-
-// Export functions for use in other modules
-export { gameState, renderPlayerScores, startRound, endRound };
+// Export game state and functions
+export { gameState, initGame, startRound };
