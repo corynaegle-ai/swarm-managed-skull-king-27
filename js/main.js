@@ -1,22 +1,16 @@
 import { collectBids } from './bid-phase.js';
 
-// Game state object with bids property and currentPhase field
 const gameState = {
+  round: 1,
+  totalRounds: 10,
   players: [],
-  currentPhase: 'initial',
-  bids: [],
-  scores: {}
+  scores: {},
+  currentPhase: 'initial'
 };
 
-/**
- * Start a new round of the game
- */
 function startRound() {
-  gameState.currentPhase = 'bidding';
-  gameState.bids = [];
-  collectBids(gameState.players, (bids) => {
-    gameState.bids = bids;
-  });
+  // Implementation for starting a round
+  // This function will be modified by a sibling ticket to call collectBids()
 }
 
-export { gameState, startRound };
+export { startRound };
