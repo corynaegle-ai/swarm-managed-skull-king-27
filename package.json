@@ -1,10 +1,7 @@
 {
   "name": "skull-king-scoring",
   "version": "1.0.0",
-  "engines": {
-    "node": ">=14.0.0"
-  },
-  "description": "Skull King card game scoring engine with complete rule implementation",
+  "description": "Skull King card game scoring engine",
   "main": "src/scoring.js",
   "scripts": {
     "test": "jest",
@@ -13,9 +10,8 @@
   },
   "keywords": [
     "skull-king",
-    "card-game",
     "scoring",
-    "game-rules"
+    "card-game"
   ],
   "author": "",
   "license": "MIT",

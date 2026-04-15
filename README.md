@@ -1,160 +1,145 @@
-# Skull King Game Scoring System
+# Skull King Scoring Engine
 
-## Project Overview
-A comprehensive scoring engine for the Skull King card game, implementing complex scoring rules with full transparency and validation.
-
-## Features
-
-✅ **Accurate Scoring** - Implements all Skull King scoring rules correctly
-✅ **Transparent Breakdown** - Shows base score, bonus, and totals for each round
-✅ **Validation** - Validates round data against game rules
-✅ **Error Handling** - Comprehensive error handling with clear messages
-✅ **Well Tested** - 40+ unit tests covering all scoring scenarios
-✅ **Production Ready** - Clean, documented, maintainable code
-
-## Quick Start
-
-### Installation
-```bash
-npm install
-```
-
-### Usage
-
-```javascript
-const { calculateRoundScore, calculateTotalScore } = require('./src/scoring');
-
-// Calculate score for a single round
-const round1 = calculateRoundScore(5, 5, 1);
-console.log(round1.totalScore); // 110 (20×5 base + 10×1 bonus)
-
-// Calculate total across multiple rounds
-const gameScore = calculateTotalScore([
-  { bid: 5, tricks: 5, hands: 1 },
-  { bid: 3, tricks: 3, hands: 1 },
-  { bid: 0, tricks: 0, hands: 1 }
-]);
-console.log(gameScore.totalScore); // 190
-```
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run with coverage
-npm test -- --coverage
-```
+A JavaScript implementation of complex Skull King card game scoring rules.
 
 ## Scoring Rules
 
-See [README_SCORING.md](./README_SCORING.md) for complete scoring rules documentation.
+### Non-Zero Bids
+- **Exact bid**: Base score = 20 × tricks, plus bonus = 10 × hands
+- **Missed bid**: Score = -10 × |bid - tricks| (no bonus)
 
-### Quick Reference
+### Zero Bids (Bid = 0)
+- **Exact (0 tricks taken)**: +10 × hands
+- **Missed (took any tricks)**: -10 × hands
 
-**Non-Zero Bids:**
-- Exact: `+20 × bid + 10 × hands` (when bid == tricks)
-- Missed: `-10 × |bid - tricks|` (when bid != tricks)
+### Bonus Points
+Bonus points (10 × hands) are **only applied when the bid is exactly met**.
 
-**Zero Bids:**
-- Exact (0 tricks): `+10 × hands`
-- Missed (any tricks): `-10 × hands`
+## API
 
-**Key Rule:** Bonus points (+10 × hands) only apply when a non-zero bid is met exactly.
+### calculateScore(bid, tricks, hands)
 
-## API Reference
+Calculates the score for a single round.
 
-### calculateRoundScore(bid, tricks, hands)
-Calculates score for a single round.
+**Parameters:**
+- `bid` (number): Tricks bid by the player (0 or positive integer)
+- `tricks` (number): Actual tricks taken (non-negative integer)
+- `hands` (number): Number of hands/rounds played (positive integer)
 
-**Returns:** `{bid, tricks, hands, baseScore, bonusScore, totalScore, exact}`
+**Returns:** Object with:
+```javascript
+{
+  bid: number,
+  tricks: number,
+  hands: number,
+  baseScore: number,
+  bonusPoints: number,
+  total: number,
+  breakdown: {
+    description: string,
+    base: number,
+    bonus: number,
+    total: number
+  }
+}
+```
 
 ### calculateTotalScore(rounds)
-Calculates cumulative score across rounds.
 
-**Returns:** `{totalScore, rounds[], roundCount}`
+Calculates total score across multiple rounds.
 
-### validateRoundScoring(round)
-Validates a round against game rules.
+**Parameters:**
+- `rounds` (array): Array of round objects with `{bid, tricks, hands}`
 
-**Returns:** `{valid, errors[], warnings[]}`
-
-## Project Structure
-
-```
-.
-├── src/
-│   ├── scoring.js           # Main scoring engine
-│   └── scoring.test.js      # Comprehensive test suite (40+ tests)
-├── README.md                # This file
-├── README_SCORING.md        # Detailed scoring rules
-└── package.json             # Project dependencies
+**Returns:** Object with:
+```javascript
+{
+  totalScore: number,
+  rounds: array of score results,
+  summary: {
+    totalRounds: number,
+    totalScore: number,
+    roundBreakdown: array of round summaries
+  }
+}
 ```
 
 ## Examples
 
-### Example 1: Perfect Round
+### Example 1: Exact Bid with Bonus
 ```javascript
-const result = calculateRoundScore(4, 4, 1);
-// bid: 4, tricks: 4 (exact match)
-// Base: 20 × 4 = 80
-// Bonus: 10 × 1 = 10 (applied because bid was exact)
-// Total: 90
+const { calculateScore } = require('./src/scoring');
+
+const result = calculateScore(4, 4, 1);
+// bid: 4, tricks: 4, hands: 1
+// baseScore: 80 (20 × 4)
+// bonusPoints: 10 (10 × 1)
+// total: 90
 ```
 
-### Example 2: Missed Bid
+### Example 2: Exact Bid, More Hands
 ```javascript
-const result = calculateRoundScore(5, 3, 1);
-// bid: 5, tricks: 3
-// Penalty: -10 × |5-3| = -20
-// Total: -20
+const result = calculateScore(5, 5, 1);
+// bid: 5, tricks: 5, hands: 1
+// baseScore: 100 (20 × 5)
+// bonusPoints: 10 (10 × 1)
+// total: 110
 ```
 
-### Example 3: Zero Bid Made
+### Example 3: Missed Bid (Under)
 ```javascript
-const result = calculateRoundScore(0, 0, 2);
-// bid: 0, tricks: 0
-// Score: 10 × 2 = 20
-// Total: 20
+const result = calculateScore(5, 3, 1);
+// bid: 5, tricks: 3, hands: 1
+// baseScore: -20 (-10 × 2 difference)
+// bonusPoints: 0 (no bonus for missed bid)
+// total: -20
 ```
 
-### Example 4: Zero Bid Broken
+### Example 4: Exact Zero Bid
 ```javascript
-const result = calculateRoundScore(0, 1, 1);
-// bid: 0, tricks: 1
-// Penalty: -10 × 1 = -10
-// Total: -10
+const result = calculateScore(0, 0, 1);
+// bid: 0, tricks: 0, hands: 1
+// baseScore: 10 (10 × 1)
+// bonusPoints: 0
+// total: 10
 ```
 
-### Example 5: Full Game
+### Example 5: Failed Zero Bid
 ```javascript
-const gameRounds = [
-  { bid: 5, tricks: 5, hands: 1 }, // Exact: 20×5 + 10×1 = 110
-  { bid: 3, tricks: 3, hands: 1 }, // Exact: 20×3 + 10×1 = 70
-  { bid: 0, tricks: 0, hands: 1 }  // Exact: 10×1 = 10
-];
-
-const game = calculateTotalScore(gameRounds);
-console.log(game.totalScore); // 190 (110 + 70 + 10)
+const result = calculateScore(0, 2, 1);
+// bid: 0, tricks: 2, hands: 1
+// baseScore: -10 (-10 × 1)
+// bonusPoints: 0
+// total: -10
 ```
 
-## Acceptance Criteria Status
+### Example 6: Multiple Rounds
+```javascript
+const { calculateTotalScore } = require('./src/scoring');
 
-✅ **AC1** - Correctly calculates non-zero bid scores
-✅ **AC2** - Correctly calculates zero bid scores  
-✅ **AC3** - Only applies bonus points when bid is exactly met
-✅ **AC4** - Updates total scores correctly
-✅ **AC5** - Shows score breakdown for transparency
+const result = calculateTotalScore([
+  { bid: 4, tricks: 4, hands: 1 }, // 90
+  { bid: 5, tricks: 3, hands: 1 }, // -20
+  { bid: 0, tricks: 0, hands: 1 }  // 10
+]);
+// totalScore: 80
+```
 
-## Development
+## Installation
 
-All code follows modern JavaScript best practices with:
-- Clear function naming and documentation
-- Comprehensive error handling
-- Input validation
-- Full test coverage
-- No external dependencies for core logic
+```bash
+npm install
+```
 
-## License
-MIT
+## Testing
+
+```bash
+npm test
+```
+
+Tests verify all acceptance criteria:
+1. Non-zero bid scoring (exact and missed)
+2. Zero bid scoring (exact and failed)
+3. Bonus points only on exact bids
+4. Total score calculations
+5. Score breakdown transparency
