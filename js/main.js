@@ -1,15 +1,43 @@
+/**
+ * Main game module for Skull King
+ */
+
 import { collectBids } from './bid-phase.js';
 
+/**
+ * Main game state object
+ * Tracks game progress and player information
+ */
 const gameState = {
-  players: ['Player 1', 'Player 2', 'Player 3'],
-  scores: [0, 0, 0],
-  bids: [],
+  players: [],
+  scores: {},
+  currentRound: 1,
+  totalRounds: 10,
+  bids: {},
   currentPhase: 'setup',
 };
 
-function startRound() {
-  gameState.bids = [];
-  collectBids();
+/**
+ * Initialize the game with player names
+ * @param {string[]} playerNames - Array of player names
+ */
+function initGame(playerNames) {
+  gameState.players = playerNames;
+  gameState.scores = {};
+  playerNames.forEach(player => {
+    gameState.scores[player] = 0;
+  });
 }
 
-export { gameState, startRound };
+/**
+ * Start a new round
+ */
+function startRound() {
+  gameState.currentPhase = 'bidding';
+  collectBids(gameState.players, (bids) => {
+    gameState.bids = bids;
+    gameState.currentPhase = 'scoring';
+  });
+}
+
+export { gameState, initGame, startRound };
