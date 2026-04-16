@@ -1,0 +1,14 @@
+NOTE: js/gameState.test.js is provided for reference and validation.
+To run tests, ensure Jest or similar test framework is configured:
+
+  npm install --save-dev jest
+  npx jest js/gameState.test.js
+
+Alternatively, if you have a test setup already configured, simply run:
+  npm test
+
+The test suite validates all acceptance criteria:
+1. gameState object tracks currentRound (1-10) and phase transitions
+2. initializeGame() resets state to round 1, setup phase
+3. advanceRound() increments round and handles game completion at round 10 (only after playing round 10)
+4. Phase management functions work correctly
